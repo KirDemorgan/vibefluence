@@ -737,3 +737,15 @@ func TestPublishedContentAlwaysHasTheStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestContentThatIsAlreadyPublishedIsLeftUntouched(t *testing.T) {
+	for _, content := range []string{"# Plain, no front matter\n", "---\ntitle: T\nstatus: published\n---\nbody\n", "---\r\ntitle: T\r\n---\r\nbody\r\n"} {
+		e := newEnv(t, fakegitlab.ProjectOptions{})
+		if _, err := e.publisher.Publish(context.Background(), e.request("docs/a.md", content)); err != nil {
+			t.Fatalf("%q: %v", content, err)
+		}
+		if got, _ := e.fake.File(project, "master", "docs/a.md"); got != content {
+			t.Errorf("content changed:\n got %q\nwant %q", got, content)
+		}
+	}
+}

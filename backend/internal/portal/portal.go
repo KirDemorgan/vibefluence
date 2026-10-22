@@ -51,27 +51,33 @@ type Options struct {
 	Logger     *slog.Logger
 	Renderer   *markdown.Renderer
 	ImageCache *ImageCache
+	Drafts     DraftStore
+	Publisher  Publisher
 }
 
 type Portal struct {
-	index    *index.Manager
-	files    FileReader
-	baseURL  string
-	settings map[string]RepoSettings
-	logger   *slog.Logger
-	renderer *markdown.Renderer
-	images   *ImageCache
+	index     *index.Manager
+	files     FileReader
+	baseURL   string
+	settings  map[string]RepoSettings
+	logger    *slog.Logger
+	renderer  *markdown.Renderer
+	images    *ImageCache
+	drafts    DraftStore
+	publisher Publisher
 }
 
 func New(opts Options) *Portal {
 	portal := &Portal{
-		index:    opts.Index,
-		files:    opts.Files,
-		baseURL:  strings.TrimRight(opts.GitLabURL, "/"),
-		settings: opts.Settings,
-		logger:   opts.Logger,
-		renderer: opts.Renderer,
-		images:   opts.ImageCache,
+		index:     opts.Index,
+		files:     opts.Files,
+		baseURL:   strings.TrimRight(opts.GitLabURL, "/"),
+		settings:  opts.Settings,
+		logger:    opts.Logger,
+		renderer:  opts.Renderer,
+		images:    opts.ImageCache,
+		drafts:    opts.Drafts,
+		publisher: opts.Publisher,
 	}
 	if portal.logger == nil {
 		portal.logger = slog.New(slog.DiscardHandler)

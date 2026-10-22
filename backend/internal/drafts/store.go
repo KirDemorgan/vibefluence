@@ -50,6 +50,9 @@ type Draft struct {
 	Author     string    `json:"author"`
 	CreatedAt  time.Time `json:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
+
+	MergeRequestURL string `json:"mergeRequestUrl,omitempty"`
+	MergeRequestIID int    `json:"mergeRequestIid,omitempty"`
 }
 
 func (d Draft) IsNew() bool {

@@ -247,6 +247,10 @@ func validate(request Request) (string, error) {
 	if err := drafts.Validate(drafts.Draft{Repo: "validate", Path: request.Path, Content: request.Content}); err != nil {
 		return "", &ValidationError{Message: err.Error()}
 	}
+	parsed := docs.Parse([]byte(request.Content), request.Path)
+	if parsed.Status == docs.StatusPublished && len(parsed.Warnings) == 0 {
+		return request.Content, nil
+	}
 	content, err := docs.EnsureStatus(request.Content, docs.StatusPublished)
 	if err != nil {
 		return "", &ValidationError{Message: err.Error()}
