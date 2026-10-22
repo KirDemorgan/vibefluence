@@ -21,6 +21,7 @@ func TestUnknownProjectIsNotFoundEverywhere(t *testing.T) {
 		{http.MethodGet, base + "/repository/files/a.md/raw"},
 		{http.MethodGet, base + "/repository/blobs/abc/raw"},
 		{http.MethodGet, base + "/repository/branches/master"},
+		{http.MethodDelete, base + "/repository/branches/x"},
 		{http.MethodPost, base + "/repository/commits"},
 		{http.MethodPost, base + "/merge_requests"},
 		{http.MethodGet, base + "/merge_requests/1"},

@@ -27,6 +27,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v4/projects/{id}/repository/files/{path}", s.handleFile)
 	s.mux.HandleFunc("GET /api/v4/projects/{id}/repository/blobs/{sha}/raw", s.handleBlobRaw)
 	s.mux.HandleFunc("GET /api/v4/projects/{id}/repository/branches/{branch}", s.handleBranch)
+	s.mux.HandleFunc("DELETE /api/v4/projects/{id}/repository/branches/{branch}", s.handleDeleteBranch)
 	s.mux.HandleFunc("POST /api/v4/projects/{id}/repository/commits", s.handleCreateCommit)
 	s.mux.HandleFunc("POST /api/v4/projects/{id}/merge_requests", s.handleCreateMergeRequest)
 	s.mux.HandleFunc("GET /api/v4/projects/{id}/merge_requests/{iid}", s.handleGetMergeRequest)
@@ -276,6 +277,24 @@ func (s *Server) handleBranch(w http.ResponseWriter, r *http.Request) {
 		"default": name == project.defaultBranch,
 		"commit":  map[string]string{"id": found.head},
 	})
+}
+
+func (s *Server) handleDeleteBranch(w http.ResponseWriter, r *http.Request) {
+	project, ok := s.projectFor(w, r)
+	if !ok {
+		return
+	}
+	name := r.PathValue("branch")
+	if _, exists := project.branches[name]; !exists {
+		writeMessage(w, http.StatusNotFound, "404 Branch Not Found")
+		return
+	}
+	if name == project.defaultBranch {
+		writeMessage(w, http.StatusForbidden, "The default branch of a project cannot be deleted.")
+		return
+	}
+	delete(project.branches, name)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) handleBlobRaw(w http.ResponseWriter, r *http.Request) {
