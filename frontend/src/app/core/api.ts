@@ -1,13 +1,24 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import { DocumentResponse, Repo, SearchResponse, TreeResponse } from './models';
+import {
+  Draft,
+  DraftSummary,
+  DocumentResponse,
+  PreviewResponse,
+  PublishResult,
+  Repo,
+  SaveDraftBody,
+  SearchResponse,
+  TreeResponse,
+} from './models';
 
 export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
     message: string,
+    readonly details: Record<string, unknown> = {},
   ) {
     super(message);
     this.name = 'ApiError';
@@ -15,6 +26,14 @@ export class ApiError extends Error {
 
   get isNotFound(): boolean {
     return this.status === 404;
+  }
+
+  get isConflict(): boolean {
+    return this.status === 409 && this.code === 'conflict';
+  }
+
+  get isBusy(): boolean {
+    return this.status === 409 && this.code === 'busy';
   }
 
   get isUpstream(): boolean {
@@ -33,7 +52,14 @@ function toApiError(failure: unknown): ApiError {
     const code =
       typeof body.error === 'string' ? body.error : failure.status === 0 ? 'network' : 'unknown';
     const message = typeof body.message === 'string' ? body.message : failure.message;
-    return new ApiError(failure.status, code, message);
+    return new ApiError(
+      failure.status,
+      code,
+      message,
+      typeof failure.error === 'object' && failure.error
+        ? (failure.error as Record<string, unknown>)
+        : {},
+    );
   }
   return new ApiError(0, 'unknown', failure instanceof Error ? failure.message : 'unknown error');
 }
@@ -74,6 +100,57 @@ export class Api {
     return this.http
       .post<Repo>(`${API}/repos/${encodeURIComponent(repo)}/refresh`, null)
       .pipe(catchError((failure) => throwError(() => toApiError(failure))));
+  }
+
+  allDrafts(): Observable<DraftSummary[]> {
+    return this.get<{ drafts: DraftSummary[] }>(`${API}/drafts`).pipe(map((body) => body.drafts));
+  }
+
+  drafts(repo: string): Observable<DraftSummary[]> {
+    return this.get<{ drafts: DraftSummary[] }>(
+      `${API}/repos/${encodeURIComponent(repo)}/drafts`,
+    ).pipe(map((body) => body.drafts));
+  }
+
+  draft(repo: string, id: string): Observable<Draft> {
+    return this.get<Draft>(
+      `${API}/repos/${encodeURIComponent(repo)}/drafts/${encodeURIComponent(id)}`,
+    );
+  }
+
+  saveDraft(repo: string, body: SaveDraftBody): Observable<Draft> {
+    return this.write<Draft>('put', `${API}/repos/${encodeURIComponent(repo)}/drafts`, body);
+  }
+
+  deleteDraft(repo: string, id: string): Observable<void> {
+    return this.http
+      .delete<void>(`${API}/repos/${encodeURIComponent(repo)}/drafts/${encodeURIComponent(id)}`)
+      .pipe(catchError((failure) => throwError(() => toApiError(failure))));
+  }
+
+  publish(
+    repo: string,
+    id: string,
+    body: { author: string; force: boolean },
+  ): Observable<PublishResult> {
+    return this.write<PublishResult>(
+      'post',
+      `${API}/repos/${encodeURIComponent(repo)}/drafts/${encodeURIComponent(id)}/publish`,
+      body,
+    );
+  }
+
+  preview(repo: string, body: { path: string; content: string }): Observable<PreviewResponse> {
+    return this.write<PreviewResponse>(
+      'post',
+      `${API}/repos/${encodeURIComponent(repo)}/preview`,
+      body,
+    );
+  }
+
+  private write<T>(method: 'put' | 'post', url: string, body: object): Observable<T> {
+    const request = method === 'put' ? this.http.put<T>(url, body) : this.http.post<T>(url, body);
+    return request.pipe(catchError((failure) => throwError(() => toApiError(failure))));
   }
 
   private get<T>(url: string, params?: Record<string, string>): Observable<T> {

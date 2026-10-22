@@ -1,4 +1,13 @@
-import { ancestorsOf, docLink, docPathFromUrl, folderOf, repoFromUrl, repoLink } from './links';
+import {
+  ancestorsOf,
+  docLink,
+  docPathFromUrl,
+  editLink,
+  folderOf,
+  newLink,
+  repoFromUrl,
+  repoLink,
+} from './links';
 
 describe('links', () => {
   it('builds router commands for documents and repositories', () => {
@@ -32,5 +41,14 @@ describe('links', () => {
     expect(folderOf('README.md')).toBe('');
     expect(ancestorsOf('docs/guide/start.md')).toEqual(['docs', 'docs/guide']);
     expect(ancestorsOf('README.md')).toEqual([]);
+  });
+
+  it('understands the editor routes', () => {
+    expect(repoFromUrl('/new/platform')).toBe('platform');
+    expect(repoFromUrl('/edit/platform/docs/a.md')).toBe('platform');
+    expect(docPathFromUrl('/edit/platform/docs/a.md')).toBe('docs/a.md');
+    expect(docPathFromUrl('/new/platform')).toBeNull();
+    expect(editLink('platform', 'docs/a.md')).toEqual(['/edit', 'platform', 'docs', 'a.md']);
+    expect(newLink('platform')).toEqual(['/new', 'platform']);
   });
 });

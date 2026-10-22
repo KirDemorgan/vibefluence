@@ -63,3 +63,55 @@ export interface SearchResponse {
   query: string;
   results: SearchResult[];
 }
+
+export interface DraftSummary {
+  id: string;
+  repo: string;
+  path: string;
+  title: string;
+  status: DocStatus;
+  isNew: boolean;
+  author: string;
+  updatedAt: string;
+  baseBlobId: string;
+  mergeRequestUrl?: string;
+}
+
+export interface Draft extends DraftSummary {
+  content: string;
+}
+
+export interface SaveDraftBody {
+  path: string;
+  content: string;
+  baseBlobId: string;
+  author: string;
+}
+
+export type PublishReason =
+  | 'auto_merge_disabled'
+  | 'pipeline_started'
+  | 'pipeline_unknown'
+  | 'not_mergeable'
+  | 'forbidden'
+  | 'refused';
+
+export interface PublishResult {
+  outcome: 'merged' | 'pending';
+  reason?: PublishReason;
+  detail?: string;
+  mergeRequestUrl?: string;
+  mergeRequestIid?: number;
+  created: boolean;
+  path: string;
+  draftRemoved: boolean;
+}
+
+export interface PreviewResponse {
+  title: string;
+  status: DocStatus;
+  type?: string;
+  warnings: string[];
+  html: string;
+  headings: Heading[];
+}
