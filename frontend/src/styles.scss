@@ -1,10 +1,4 @@
-html,
-body {
-  height: 100%;
-  margin: 0;
-}
-
-body {
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
+@use 'styles/tokens';
+@use 'styles/base';
+@use 'styles/prose';
+@use 'styles/code';

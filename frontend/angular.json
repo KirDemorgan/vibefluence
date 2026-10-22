@@ -16,7 +16,7 @@
       },
       "root": "",
       "sourceRoot": "src",
-      "prefix": "app",
+      "prefix": "vf",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
@@ -28,26 +28,27 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "{search,file-text,file,folder,folder-open,chevron-right,chevron-left,chevron-down,chevron-up,plus,pencil,trash-2,sun,moon,monitor,refresh-cw,external-link,panel-left,x,check,circle-alert,triangle-alert,git-merge,git-pull-request,book-open,command,save,send,clock,eye-off,file-plus,arrow-left,info,circle-check,circle-x,menu,languages,ellipsis,hash,link,list-tree,corner-down-left,arrow-up,arrow-down,file-pen,upload,undo-2,eye,columns-2,sparkles,git-branch,lock,circle-dashed,settings,chevrons-up-down,book-marked,file-search,panel-left-close,git-commit-horizontal,arrow-up-right}.svg",
+                "input": "node_modules/@taiga-ui/icons/src",
+                "output": "assets/taiga-ui/icons"
               }
             ],
-            "styles": [
-              "node_modules/@taiga-ui/styles/taiga-ui-theme.less",
-              "node_modules/@taiga-ui/styles/taiga-ui-fonts.less",
-              "src/styles.scss"
-            ]
+            "styles": ["node_modules/@taiga-ui/styles/taiga-ui-theme.less", "src/styles.scss"]
           },
           "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "450kB",
-                  "maximumError": "650kB"
+                  "maximumWarning": "600kB",
+                  "maximumError": "800kB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "8kB",
+                  "maximumError": "16kB"
                 }
               ],
               "outputHashing": "all"

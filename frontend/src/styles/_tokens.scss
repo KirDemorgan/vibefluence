@@ -1,0 +1,131 @@
+@mixin light {
+  color-scheme: light;
+  --vf-bg: #fbfbfd;
+  --vf-surface: #ffffff;
+  --vf-surface-2: #f5f5f7;
+  --vf-surface-3: #ececf0;
+  --vf-text: #1d1d1f;
+  --vf-text-2: #515154;
+  --vf-text-3: #86868b;
+  --vf-border: rgba(0, 0, 0, 0.08);
+  --vf-border-strong: rgba(0, 0, 0, 0.16);
+  --vf-accent: #5856d6;
+  --vf-accent-hover: #4b49c4;
+  --vf-accent-pressed: #3f3dae;
+  --vf-accent-soft: rgba(88, 86, 214, 0.1);
+  --vf-on-accent: #ffffff;
+  --vf-positive: #1a7f45;
+  --vf-positive-soft: rgba(26, 127, 69, 0.1);
+  --vf-warning: #9a6700;
+  --vf-warning-soft: rgba(154, 103, 0, 0.12);
+  --vf-negative: #cf222e;
+  --vf-negative-soft: rgba(207, 34, 46, 0.09);
+  --vf-code-bg: #f6f6f8;
+  --vf-glass: rgba(251, 251, 253, 0.72);
+  --vf-overlay: rgba(20, 20, 24, 0.36);
+  --vf-shadow-s: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --vf-shadow-m: 0 2px 8px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.07);
+  --vf-shadow-l: 0 8px 24px rgba(0, 0, 0, 0.08), 0 32px 80px rgba(0, 0, 0, 0.16);
+}
+
+@mixin dark {
+  color-scheme: dark;
+  --vf-bg: #0b0b0d;
+  --vf-surface: #161618;
+  --vf-surface-2: #1d1d20;
+  --vf-surface-3: #2a2a2e;
+  --vf-text: #f5f5f7;
+  --vf-text-2: #b4b4ba;
+  --vf-text-3: #86868b;
+  --vf-border: rgba(255, 255, 255, 0.1);
+  --vf-border-strong: rgba(255, 255, 255, 0.2);
+  --vf-accent: #8b89ff;
+  --vf-accent-hover: #a09eff;
+  --vf-accent-pressed: #7472f0;
+  --vf-accent-soft: rgba(139, 137, 255, 0.16);
+  --vf-on-accent: #0b0b0d;
+  --vf-positive: #4cc27f;
+  --vf-positive-soft: rgba(76, 194, 127, 0.14);
+  --vf-warning: #e3b341;
+  --vf-warning-soft: rgba(227, 179, 65, 0.14);
+  --vf-negative: #ff7b72;
+  --vf-negative-soft: rgba(255, 123, 114, 0.14);
+  --vf-code-bg: #121214;
+  --vf-glass: rgba(22, 22, 24, 0.72);
+  --vf-overlay: rgba(0, 0, 0, 0.56);
+  --vf-shadow-s: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --vf-shadow-m: 0 2px 8px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.45);
+  --vf-shadow-l: 0 8px 24px rgba(0, 0, 0, 0.5), 0 32px 80px rgba(0, 0, 0, 0.6);
+}
+
+:root,
+:root[data-theme='light'] {
+  @include light;
+}
+
+:root[data-theme='dark'] {
+  @include dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    @include dark;
+  }
+}
+
+:root {
+  --vf-font:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'Noto Sans', sans-serif;
+  --vf-font-display:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --vf-font-mono:
+    ui-monospace, 'SF Mono', SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono',
+    monospace;
+
+  --vf-radius-s: 8px;
+  --vf-radius-m: 12px;
+  --vf-radius-l: 18px;
+  --vf-radius-pill: 999px;
+
+  --vf-sidebar-width: 18.5rem;
+  --vf-topbar-height: 3.5rem;
+  --vf-reading-width: 44rem;
+  --vf-toc-width: 14rem;
+
+  --vf-ease: cubic-bezier(0.22, 0.8, 0.22, 1);
+  --vf-fast: 140ms;
+  --vf-base: 240ms;
+}
+
+body,
+body[tuiTheme='dark'] {
+  --tui-background-base: var(--vf-surface);
+  --tui-background-base-alt: var(--vf-surface-2);
+  --tui-background-elevation-1: var(--vf-surface);
+  --tui-background-elevation-2: var(--vf-surface);
+  --tui-background-elevation-3: var(--vf-surface-2);
+  --tui-background-accent-1: var(--vf-accent);
+  --tui-background-accent-1-hover: var(--vf-accent-hover);
+  --tui-background-accent-1-pressed: var(--vf-accent-pressed);
+  --tui-text-primary: var(--vf-text);
+  --tui-text-secondary: var(--vf-text-2);
+  --tui-text-tertiary: var(--vf-text-3);
+  --tui-text-action: var(--vf-accent);
+  --tui-text-action-hover: var(--vf-accent-hover);
+  --tui-text-positive: var(--vf-positive);
+  --tui-text-negative: var(--vf-negative);
+  --tui-text-primary-on-accent-1: var(--vf-on-accent);
+  --tui-border-normal: var(--vf-border);
+  --tui-border-hover: var(--vf-border-strong);
+  --tui-border-focus: var(--vf-accent);
+  --tui-status-positive: var(--vf-positive);
+  --tui-status-negative: var(--vf-negative);
+  --tui-status-warning: var(--vf-warning);
+  --tui-radius-s: var(--vf-radius-s);
+  --tui-radius-m: var(--vf-radius-m);
+  --tui-radius-l: var(--vf-radius-l);
+  --tui-typography-family-text: var(--vf-font);
+  --tui-typography-family-display: var(--vf-font-display);
+}
