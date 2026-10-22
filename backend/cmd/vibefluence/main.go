@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"vibefluence/internal/app"
 	"vibefluence/internal/config"
 	"vibefluence/internal/logging"
 	"vibefluence/internal/server"
@@ -60,11 +61,15 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer, getenv fu
 		slog.Int("repositories", len(cfg.Repositories)),
 	)
 
+	application, err := app.New(cfg, logger)
+	if err != nil {
+		logger.Error("cannot build the application", slog.Any("error", err))
+		_ = listener.Close()
+		return 1
+	}
+
 	runner := server.Runner{
-		Handler: server.NewHandler(server.Options{
-			Logger: logger,
-			Assets: web.Assets(),
-		}),
+		Handler:         application.Handler(web.Assets()),
 		Logger:          logger,
 		ShutdownTimeout: cfg.Server.ShutdownTimeout,
 	}
