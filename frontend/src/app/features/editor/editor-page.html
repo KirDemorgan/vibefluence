@@ -1,0 +1,348 @@
+@if (ready()) {
+  <div class="editor">
+    <header class="bar">
+      <div class="bar__title">
+        <a class="back" [routerLink]="backLink()" [attr.aria-label]="i18n.t('editor.result.back')">
+          <tui-icon icon="@tui.chevron-left" />
+          <span>{{ repoInfo()?.name ?? repo() }}</span>
+        </a>
+        <h1 class="heading">
+          {{ isNew() ? i18n.t('editor.newTitle') : i18n.t('editor.editTitle') }}
+        </h1>
+      </div>
+
+      <div class="bar__actions">
+        <span class="state" role="status" aria-live="polite">{{ stateLabel() }}</span>
+        <button
+          tuiButton
+          type="button"
+          appearance="secondary"
+          size="m"
+          iconStart="@tui.save"
+          [disabled]="!canSave()"
+          (click)="save()"
+        >
+          {{ i18n.t('editor.save') }}
+        </button>
+        <button
+          tuiButton
+          type="button"
+          appearance="primary"
+          size="m"
+          iconStart="@tui.send"
+          [disabled]="!canPublish()"
+          (click)="openPublish()"
+        >
+          {{ i18n.t('editor.publish') }}
+        </button>
+      </div>
+    </header>
+
+    @if (editing() && !result()) {
+      <div class="banner banner--info" role="note">
+        <tui-icon icon="@tui.info" />
+        <span>{{ i18n.t('editor.draftNotice') }}</span>
+      </div>
+    }
+
+    @if (mergeRequestUrl(); as url) {
+      @if (!result()) {
+        <div class="banner banner--info" role="note">
+          <tui-icon icon="@tui.git-pull-request" />
+          <span>{{ i18n.t('editor.mrNote') }}</span>
+          <a [href]="url" target="_blank" rel="noopener noreferrer">{{
+            i18n.t('editor.result.viewMr')
+          }}</a>
+        </div>
+      }
+    }
+
+    @if (result(); as published) {
+      <section
+        class="result"
+        [class.result--merged]="published.outcome === 'merged'"
+        [class.result--pending]="published.outcome === 'pending'"
+        role="status"
+      >
+        <tui-icon
+          class="result__icon"
+          [icon]="published.outcome === 'merged' ? '@tui.circle-check' : '@tui.git-pull-request'"
+        />
+        <div class="result__body">
+          <h2 class="result__title">
+            {{
+              published.outcome === 'merged'
+                ? i18n.t('editor.result.merged')
+                : i18n.t('editor.result.pending')
+            }}
+          </h2>
+          <p class="result__text">
+            @if (published.outcome === 'merged') {
+              {{ i18n.t('editor.result.mergedText', { branch: branch() }) }}
+            } @else {
+              {{ i18n.t('editor.result.pendingText') }} {{ resultReason() }}
+            }
+          </p>
+          <div class="result__links">
+            @if (published.outcome === 'merged') {
+              <a tuiButton appearance="secondary" size="s" [routerLink]="documentLink()">{{
+                i18n.t('editor.result.viewDoc')
+              }}</a>
+            }
+            @if (published.mergeRequestUrl) {
+              <a
+                tuiButton
+                appearance="flat"
+                size="s"
+                [href]="published.mergeRequestUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                iconStart="@tui.external-link"
+              >
+                {{ i18n.t('editor.result.viewMr') }}
+              </a>
+            }
+            <a tuiButton appearance="flat" size="s" [routerLink]="backLink()">{{
+              i18n.t('editor.result.back')
+            }}</a>
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (conflict(); as clash) {
+      <section
+        class="result result--conflict"
+        role="alertdialog"
+        [attr.aria-label]="i18n.t('editor.conflict.title')"
+      >
+        <tui-icon class="result__icon" icon="@tui.triangle-alert" />
+        <div class="result__body">
+          <h2 class="result__title">{{ i18n.t('editor.conflict.title') }}</h2>
+          <p class="result__text">
+            {{
+              clash.exists ? i18n.t('editor.conflict.exists') : i18n.t('editor.conflict.removed')
+            }}
+          </p>
+          <div class="result__links">
+            <button tuiButton type="button" appearance="primary" size="s" (click)="overwrite()">
+              {{ i18n.t('editor.conflict.overwrite') }}
+            </button>
+            <button tuiButton type="button" appearance="secondary" size="s" (click)="discard()">
+              {{ i18n.t('editor.conflict.discard') }}
+            </button>
+            <button tuiButton type="button" appearance="flat" size="s" (click)="keepEditing()">
+              {{ i18n.t('editor.conflict.keep') }}
+            </button>
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (problem(); as message) {
+      <div class="banner banner--danger" role="alert">
+        <tui-icon icon="@tui.circle-alert" />
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <section class="fields">
+      <label class="field field--title">
+        <span class="field__label">{{ i18n.t('editor.title') }}</span>
+        <input
+          class="input"
+          type="text"
+          autocomplete="off"
+          [placeholder]="i18n.t('editor.titlePlaceholder')"
+          [value]="titleModel()"
+          (input)="onTitle($event)"
+        />
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ i18n.t('editor.type') }}</span>
+        <select class="input" [value]="typeModel()" (change)="onType($event)">
+          <option value="" [selected]="typeModel() === ''">{{ i18n.t('editor.typeNone') }}</option>
+          @for (type of types; track type) {
+            <option [value]="type" [selected]="typeModel() === type">{{ typeLabel(type) }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="field">
+        <span class="field__label" id="vf-status-label">{{ i18n.t('editor.status') }}</span>
+        <div class="segments" role="radiogroup" aria-labelledby="vf-status-label">
+          <button
+            type="button"
+            class="segment"
+            role="radio"
+            [attr.aria-checked]="status() === 'draft'"
+            (click)="setStatus('draft')"
+          >
+            {{ i18n.t('doc.status.draft') }}
+          </button>
+          <button
+            type="button"
+            class="segment"
+            role="radio"
+            [attr.aria-checked]="status() === 'published'"
+            (click)="setStatus('published')"
+          >
+            {{ i18n.t('doc.status.published') }}
+          </button>
+        </div>
+      </div>
+
+      <div class="field field--path">
+        <label class="field__label" for="vf-path">{{ i18n.t('editor.path') }}</label>
+        @if (isNew()) {
+          <input
+            id="vf-path"
+            class="input input--mono"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            [class.input--invalid]="currentPath() !== '' && !validPath()"
+            [attr.aria-invalid]="currentPath() !== '' && !validPath()"
+            [value]="newPath()"
+            (input)="onPath($event)"
+          />
+          <span
+            class="field__hint"
+            [class.field__hint--error]="currentPath() !== '' && !validPath()"
+          >
+            {{
+              currentPath() !== '' && !validPath()
+                ? i18n.t('editor.pathInvalid', { roots: pathHint() })
+                : i18n.t('editor.pathHint', { roots: pathHint() })
+            }}
+          </span>
+        } @else {
+          <input
+            id="vf-path"
+            class="input input--mono"
+            type="text"
+            readonly
+            [value]="originalPath()"
+          />
+          <span class="field__hint">{{ i18n.t('editor.pathFixed') }}</span>
+        }
+      </div>
+    </section>
+
+    <p class="status-hint">
+      {{
+        status() === 'draft'
+          ? i18n.t('editor.statusHintDraft')
+          : i18n.t('editor.statusHintPublished', { branch: branch() })
+      }}
+    </p>
+
+    @if (problems().length > 0) {
+      <div class="banner banner--warning" role="alert">
+        <tui-icon icon="@tui.triangle-alert" />
+        <div>
+          <strong>{{ i18n.t('editor.problems') }}</strong>
+          <ul class="banner__list">
+            @for (item of problems(); track $index) {
+              <li>{{ item }}</li>
+            }
+          </ul>
+        </div>
+      </div>
+    }
+
+    <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('editor.content')">
+      <button
+        type="button"
+        class="tab"
+        role="tab"
+        [attr.aria-selected]="view() === 'write'"
+        (click)="setView('write')"
+      >
+        {{ i18n.t('editor.write') }}
+      </button>
+      <button
+        type="button"
+        class="tab"
+        role="tab"
+        [attr.aria-selected]="view() === 'preview'"
+        (click)="setView('preview')"
+      >
+        {{ i18n.t('editor.preview') }}
+      </button>
+    </div>
+
+    <div class="split" [attr.data-view]="view()">
+      <div class="pane pane--write">
+        <textarea
+          class="source"
+          spellcheck="false"
+          autocomplete="off"
+          [attr.aria-label]="i18n.t('editor.content')"
+          [value]="content()"
+          (input)="onSource($event)"
+        ></textarea>
+      </div>
+      <div class="pane pane--preview">
+        <div class="vf-prose preview" [innerHTML]="previewHtml()"></div>
+      </div>
+    </div>
+
+    <p class="shortcuts">{{ i18n.t('editor.shortcuts') }}</p>
+  </div>
+} @else if (loading()) {
+  <div class="editor" aria-hidden="true">
+    <span class="skeleton skeleton--bar"></span>
+    <span class="skeleton skeleton--block"></span>
+  </div>
+  <span class="vf-sr-only" role="status">{{ i18n.t('common.loading') }}</span>
+} @else if (loadFailed()) {
+  <section class="state" role="alert">
+    <tui-icon class="state__icon" icon="@tui.circle-alert" />
+    <h1 class="state__title">{{ i18n.t('editor.loadFailed') }}</h1>
+    <a tuiButton appearance="secondary" size="m" [routerLink]="backLink()">{{
+      i18n.t('editor.result.back')
+    }}</a>
+  </section>
+}
+
+<dialog
+  #dialog
+  class="dialog"
+  [attr.aria-label]="i18n.t('editor.publishTitle')"
+  (close)="cancelPublish()"
+>
+  <form class="dialog__body" method="dialog" (submit)="$event.preventDefault(); publish()">
+    <h2 class="dialog__title">{{ i18n.t('editor.publishTitle') }}</h2>
+    <p class="dialog__text">
+      {{
+        autoMerge()
+          ? i18n.t('editor.publishText', {
+              project: repoInfo()?.project ?? repo(),
+              branch: branch(),
+            })
+          : i18n.t('editor.publishTextManual', { project: repoInfo()?.project ?? repo() })
+      }}
+    </p>
+    <label class="field">
+      <span class="field__label">{{ i18n.t('editor.yourName') }}</span>
+      <input
+        class="input"
+        type="text"
+        autocomplete="name"
+        maxlength="80"
+        [value]="authorName.name()"
+        (input)="onAuthorInput($event)"
+      />
+    </label>
+    <div class="dialog__actions">
+      <button tuiButton type="button" appearance="flat" size="m" (click)="cancelPublish()">
+        {{ i18n.t('common.cancel') }}
+      </button>
+      <button tuiButton type="submit" appearance="primary" size="m" [disabled]="publishing()">
+        {{ publishing() ? i18n.t('editor.publishing') : i18n.t('editor.publish') }}
+      </button>
+    </div>
+  </form>
+</dialog>
