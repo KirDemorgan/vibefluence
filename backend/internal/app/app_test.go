@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -37,6 +38,7 @@ func newStack(t *testing.T, mutate func(*config.Config)) *stack {
 
 	autoMerge := true
 	cfg := &config.Config{
+		Server: config.Server{DataDir: t.TempDir()},
 		GitLab: config.GitLab{BaseURL: gitlabServer.URL, Token: token, WebhookSecret: "hook"},
 		Repositories: []config.Repository{
 			{ID: "docs", Name: "Docs", Project: project, Branch: "master", Paths: []string{"docs"}, AutoMerge: &autoMerge},
@@ -45,7 +47,7 @@ func newStack(t *testing.T, mutate func(*config.Config)) *stack {
 	if mutate != nil {
 		mutate(cfg)
 	}
-	application, err := New(cfg, slog.New(slog.DiscardHandler))
+	application, err := New(cfg, slog.New(slog.DiscardHandler), WithPublishTiming(time.Millisecond, time.Millisecond))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,6 +245,7 @@ func TestWithoutRepositories(t *testing.T) {
 
 func TestNewRejectsAnInvalidGitLabURL(t *testing.T) {
 	_, err := New(&config.Config{
+		Server:       config.Server{DataDir: t.TempDir()},
 		GitLab:       config.GitLab{BaseURL: "not a url", Token: "t"},
 		Repositories: []config.Repository{{ID: "a", Project: "g/a", Paths: []string{"docs"}}},
 	}, slog.New(slog.DiscardHandler))
@@ -298,5 +301,18 @@ func TestCachedCheck(t *testing.T) {
 	result = nil
 	if err := check(context.Background()); err != nil || calls != 3 {
 		t.Errorf("recovery: err %v calls %d", err, calls)
+	}
+}
+
+func TestNewRequiresAWritableDataDirectory(t *testing.T) {
+	if _, err := New(&config.Config{}, slog.New(slog.DiscardHandler)); err == nil {
+		t.Error("an empty data directory must be rejected")
+	}
+	blocker := t.TempDir() + "/file"
+	if err := os.WriteFile(blocker, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(&config.Config{Server: config.Server{DataDir: blocker}}, slog.New(slog.DiscardHandler)); err == nil {
+		t.Error("a data directory that is a file must be rejected")
 	}
 }

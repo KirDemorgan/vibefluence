@@ -11,9 +11,11 @@ import (
 
 	"vibefluence/internal/api"
 	"vibefluence/internal/config"
+	"vibefluence/internal/drafts"
 	"vibefluence/internal/gitlab"
 	"vibefluence/internal/index"
 	"vibefluence/internal/portal"
+	"vibefluence/internal/publish"
 	"vibefluence/internal/server"
 )
 
@@ -31,37 +33,75 @@ type App struct {
 	checks  []server.ReadinessCheck
 }
 
-func New(cfg *config.Config, logger *slog.Logger) (*App, error) {
+type settings struct {
+	publishGrace    time.Duration
+	publishInterval time.Duration
+}
+
+type Option func(*settings)
+
+func WithPublishTiming(grace, interval time.Duration) Option {
+	return func(s *settings) {
+		s.publishGrace, s.publishInterval = grace, interval
+	}
+}
+
+func New(cfg *config.Config, logger *slog.Logger, options ...Option) (*App, error) {
+	var tuning settings
+	for _, option := range options {
+		option(&tuning)
+	}
+	if cfg.Server.DataDir == "" {
+		return nil, fmt.Errorf("the data directory is not configured")
+	}
+	store, err := drafts.NewStore(cfg.Server.DataDir, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	repos := make([]index.Repo, 0, len(cfg.Repositories))
-	settings := make(map[string]portal.RepoSettings, len(cfg.Repositories))
+	repoSettings := make(map[string]portal.RepoSettings, len(cfg.Repositories))
 	for _, repo := range cfg.Repositories {
 		repos = append(repos, index.Repo{
 			ID: repo.ID, Name: repo.Name, Project: repo.Project, Branch: repo.Branch, Paths: repo.Paths,
 		})
-		settings[repo.ID] = portal.RepoSettings{AutoMerge: repo.AutoMergeEnabled()}
+		repoSettings[repo.ID] = portal.RepoSettings{AutoMerge: repo.AutoMergeEnabled()}
 	}
 
 	var client *gitlab.Client
 	var checks []server.ReadinessCheck
 	if len(repos) > 0 {
-		created, err := gitlab.New(gitlab.Options{BaseURL: cfg.GitLab.BaseURL, Token: cfg.GitLab.Token})
-		if err != nil {
-			return nil, fmt.Errorf("create GitLab client: %w", err)
+		created, clientErr := gitlab.New(gitlab.Options{BaseURL: cfg.GitLab.BaseURL, Token: cfg.GitLab.Token})
+		if clientErr != nil {
+			return nil, fmt.Errorf("create GitLab client: %w", clientErr)
 		}
 		client = created
 		checks = append(checks, server.ReadinessCheck{Name: "gitlab", Check: cachedCheck(client.CurrentUser, time.Now)})
 	}
 
 	manager := index.NewManager(index.Options{Repos: repos, Source: sourceOrNil(client), Logger: logger})
+	var publisher portal.Publisher
+	if client != nil {
+		publisher = publish.New(publish.Options{
+			Client:         client,
+			Invalidate:     manager.InvalidateProject,
+			Logger:         logger,
+			PipelineGrace:  tuning.publishGrace,
+			StatusInterval: tuning.publishInterval,
+		})
+	}
 	service := portal.New(portal.Options{
 		Index:     manager,
 		Files:     filesOrNil(client),
 		GitLabURL: cfg.GitLab.BaseURL,
-		Settings:  settings,
+		Settings:  repoSettings,
 		Logger:    logger,
+		Drafts:    store,
+		Publisher: publisher,
 	})
 	apiHandler := api.New(api.Options{
 		Service:       service,
+		Write:         service,
 		Logger:        logger,
 		Invalidate:    manager.InvalidateProject,
 		WebhookSecret: cfg.GitLab.WebhookSecret,

@@ -75,7 +75,9 @@ func TestRunFailsWhenAddressIsTaken(t *testing.T) {
 
 func TestRunServesAndStopsOnContextCancel(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "config.yaml")
-	if err := os.WriteFile(file, []byte("server:\n  addr: \"127.0.0.1:0\"\n  shutdownTimeout: 2s\n"), 0o600); err != nil {
+	dataDir := t.TempDir()
+	config := "server:\n  addr: \"127.0.0.1:0\"\n  dataDir: " + dataDir + "\n  shutdownTimeout: 2s\n"
+	if err := os.WriteFile(file, []byte(config), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -118,4 +120,19 @@ func waitFor(t *testing.T, condition func() bool) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatal("condition not met in time")
+}
+
+func TestRunFailsWhenTheDataDirectoryCannotBeCreated(t *testing.T) {
+	blocker := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(blocker, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stderr bytes.Buffer
+	env := getenv(map[string]string{"VIBEFLUENCE_ADDR": "127.0.0.1:0", "VIBEFLUENCE_DATA_DIR": blocker, "VIBEFLUENCE_LOG_FORMAT": "text"})
+	if code := run(context.Background(), nil, &bytes.Buffer{}, &stderr, env); code != 1 {
+		t.Errorf("exit code = %d", code)
+	}
+	if !strings.Contains(stderr.String(), "cannot build the application") {
+		t.Errorf("stderr = %q", stderr.String())
+	}
 }
