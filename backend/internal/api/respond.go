@@ -17,6 +17,13 @@ type errorBody struct {
 	Message string `json:"message"`
 }
 
+type conflictBody struct {
+	Error         string `json:"error"`
+	Message       string `json:"message"`
+	Exists        bool   `json:"exists"`
+	CurrentBlobID string `json:"currentBlobId,omitempty"`
+}
+
 func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
@@ -29,8 +36,15 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 
 func (h *handler) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var validation *portal.ValidationError
+	var conflict *portal.ConflictError
 	var apiErr *gitlab.APIError
 	switch {
+	case errors.As(err, &conflict):
+		writeJSON(w, http.StatusConflict, conflictBody{
+			Error: "conflict", Message: conflict.Message, Exists: conflict.Exists, CurrentBlobID: conflict.CurrentBlobID,
+		})
+	case errors.Is(err, portal.ErrBusy):
+		writeError(w, http.StatusConflict, "busy", "this document is being published right now, try again in a moment")
 	case errors.As(err, &validation):
 		writeError(w, http.StatusBadRequest, "invalid_request", validation.Message)
 	case errors.Is(err, portal.ErrNotFound):

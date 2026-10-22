@@ -32,6 +32,7 @@ type Service interface {
 
 type Options struct {
 	Service       Service
+	Write         WriteService
 	Logger        *slog.Logger
 	Invalidate    func(project, branch string) int
 	WebhookSecret string
@@ -39,13 +40,14 @@ type Options struct {
 
 type handler struct {
 	service       Service
+	write         WriteService
 	logger        *slog.Logger
 	invalidate    func(project, branch string) int
 	webhookSecret string
 }
 
 func New(opts Options) http.Handler {
-	h := &handler{service: opts.Service, logger: opts.Logger, invalidate: opts.Invalidate, webhookSecret: opts.WebhookSecret}
+	h := &handler{service: opts.Service, write: opts.Write, logger: opts.Logger, invalidate: opts.Invalidate, webhookSecret: opts.WebhookSecret}
 	if h.logger == nil {
 		h.logger = slog.New(slog.DiscardHandler)
 	}
@@ -58,6 +60,9 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /api/v1/repos/{repo}/refresh", h.refresh)
 	mux.HandleFunc("GET /api/v1/search", h.search)
 	mux.HandleFunc("POST /api/v1/webhooks/gitlab", h.webhook)
+	if opts.Write != nil {
+		h.registerWrite(mux)
+	}
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, _ *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such API endpoint")
 	})
