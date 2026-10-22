@@ -2,6 +2,7 @@ package index
 
 import (
 	"path"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -158,7 +159,7 @@ func snippetAround(text string, offset, termLength int) string {
 	for end < len(text) && !utf8.RuneStart(text[end]) {
 		end++
 	}
-	snippet := strings.Join(strings.Fields(text[start:end]), " ")
+	snippet := cleanMarkdown(text[start:end])
 	if start > 0 {
 		snippet = "…" + snippet
 	}
@@ -166,4 +167,17 @@ func snippetAround(text string, offset, termLength int) string {
 		snippet += "…"
 	}
 	return snippet
+}
+
+var (
+	markdownLink  = regexp.MustCompile(`!?\[([^\]]*)\]\([^)]*\)`)
+	tableDivider  = regexp.MustCompile(`\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?`)
+	markdownNoise = strings.NewReplacer("`", "", "*", "", "|", " ", "#", "", ">", "", "~~", "")
+)
+
+func cleanMarkdown(fragment string) string {
+	fragment = markdownLink.ReplaceAllString(fragment, "$1")
+	fragment = tableDivider.ReplaceAllString(fragment, " ")
+	fragment = markdownNoise.Replace(fragment)
+	return strings.Join(strings.Fields(fragment), " ")
 }

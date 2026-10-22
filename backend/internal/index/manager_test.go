@@ -737,3 +737,31 @@ func TestInvalidateProjectMatchesProjectAndBranch(t *testing.T) {
 		t.Errorf("a repository without a snapshot is invalidated for any branch: %d", n)
 	}
 }
+
+func TestSnippetsDropMarkdownSyntax(t *testing.T) {
+	tests := map[string]string{
+		"| A | B |\n|:--|--:|\n| gateway | x |":        "A B gateway x",
+		"see [the **gateway** docs](https://x/y) now":  "see the gateway docs now",
+		"![diagram](img/a.png) gateway `code` ~~old~~": "diagram gateway code old",
+		"> quoted\n# Heading\ntext":                    "quoted Heading text",
+		"plain   spaced\n\ntext":                       "plain spaced text",
+	}
+	for input, want := range tests {
+		if got := cleanMarkdown(input); got != want {
+			t.Errorf("cleanMarkdown(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestSearchSnippetOfATableIsReadable(t *testing.T) {
+	e := newEnv(t, nil)
+	e.put("docs/t.md", "# T\n\n| Component | Owner |\n|:--|:--|\n| API gateway | Platform |\n")
+	view := mustGet(t, e.manager, "docs")
+	results := view.Search("gateway", 5)
+	if len(results) != 1 || strings.ContainsAny(results[0].Snippet, "|:") && strings.Contains(results[0].Snippet, "--") {
+		t.Fatalf("results = %+v", results)
+	}
+	if !strings.Contains(results[0].Snippet, "API gateway Platform") {
+		t.Errorf("snippet = %q", results[0].Snippet)
+	}
+}
