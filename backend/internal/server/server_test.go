@@ -157,13 +157,25 @@ func TestRequestIDAvailableInContext(t *testing.T) {
 	}
 }
 
+func TestContentSecurityPolicyForbidsInlineScriptsAndFraming(t *testing.T) {
+	for _, directive := range []string{"script-src 'self';", "object-src 'none'", "frame-ancestors 'none'", "base-uri 'self'"} {
+		if !strings.Contains(contentSecurityPolicy, directive) {
+			t.Errorf("policy lacks %q", directive)
+		}
+	}
+	if strings.Contains(contentSecurityPolicy, "script-src 'self' 'unsafe") {
+		t.Error("scripts must not allow unsafe sources")
+	}
+}
+
 func TestSecurityHeaders(t *testing.T) {
 	handler := NewHandler(Options{Assets: newTestAssets()})
 	recorder := do(t, handler, http.MethodGet, "/healthz")
 	want := map[string]string{
-		"X-Content-Type-Options": "nosniff",
-		"X-Frame-Options":        "DENY",
-		"Referrer-Policy":        "strict-origin-when-cross-origin",
+		"X-Content-Type-Options":  "nosniff",
+		"X-Frame-Options":         "DENY",
+		"Referrer-Policy":         "strict-origin-when-cross-origin",
+		"Content-Security-Policy": contentSecurityPolicy,
 	}
 	for name, value := range want {
 		if got := recorder.Header().Get(name); got != value {

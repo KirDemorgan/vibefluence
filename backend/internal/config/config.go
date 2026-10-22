@@ -19,6 +19,7 @@ const (
 	defaultAddr            = ":8080"
 	defaultDataDir         = "./data"
 	defaultShutdownTimeout = 15 * time.Second
+	defaultWriteRateLimit  = 120
 	defaultLogLevel        = "info"
 	defaultLogFormat       = "json"
 	defaultDocsPath        = "docs"
@@ -48,6 +49,14 @@ type Server struct {
 	Addr            string        `yaml:"addr"`
 	DataDir         string        `yaml:"dataDir"`
 	ShutdownTimeout time.Duration `yaml:"shutdownTimeout"`
+	WriteRateLimit  *int          `yaml:"writeRateLimitPerMinute"`
+}
+
+func (s Server) WriteRatePerMinute() int {
+	if s.WriteRateLimit == nil {
+		return defaultWriteRateLimit
+	}
+	return *s.WriteRateLimit
 }
 
 type Log struct {

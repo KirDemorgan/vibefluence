@@ -15,6 +15,17 @@ import (
 
 const requestIDHeader = "X-Request-Id"
 
+const contentSecurityPolicy = "default-src 'self'; " +
+	"script-src 'self'; " +
+	"style-src 'self' 'unsafe-inline'; " +
+	"img-src 'self' data:; " +
+	"font-src 'self' data:; " +
+	"connect-src 'self'; " +
+	"object-src 'none'; " +
+	"base-uri 'self'; " +
+	"form-action 'self'; " +
+	"frame-ancestors 'none'"
+
 var validRequestID = regexp.MustCompile(`^[A-Za-z0-9._-]{1,64}$`)
 
 type contextKey struct{}
@@ -124,6 +135,8 @@ func withSecurityHeaders(next http.Handler) http.Handler {
 		header.Set("X-Content-Type-Options", "nosniff")
 		header.Set("X-Frame-Options", "DENY")
 		header.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		header.Set("Content-Security-Policy", contentSecurityPolicy)
+		header.Set("Cross-Origin-Opener-Policy", "same-origin")
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			header.Set("Cache-Control", "no-store")
 		}

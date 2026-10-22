@@ -262,3 +262,15 @@ func TestMCPSettings(t *testing.T) {
 		t.Errorf("explicit: enabled = %v, publish = %v", cfg.MCP.IsEnabled(), cfg.MCP.AllowPublish)
 	}
 }
+
+func TestWriteRateLimitDefaultsAndOverrides(t *testing.T) {
+	var cfg Config
+	if got := cfg.Server.WriteRatePerMinute(); got != 120 {
+		t.Errorf("default = %d", got)
+	}
+	disabled := -1
+	cfg.Server.WriteRateLimit = &disabled
+	if got := cfg.Server.WriteRatePerMinute(); got != -1 {
+		t.Errorf("override = %d", got)
+	}
+}

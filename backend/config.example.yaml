@@ -2,6 +2,7 @@ server:
   addr: ":8080"
   dataDir: ./data
   shutdownTimeout: 15s
+  writeRateLimitPerMinute: 120
 
 log:
   level: info

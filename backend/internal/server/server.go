@@ -24,6 +24,9 @@ type Options struct {
 	Checks []ReadinessCheck
 	API    http.Handler
 	MCP    http.Handler
+
+	WriteRatePerMinute int
+	Now                func() time.Time
 }
 
 func NewHandler(opts Options) http.Handler {
@@ -45,7 +48,12 @@ func NewHandler(opts Options) http.Handler {
 		mux.Handle("/", spaHandler(opts.Assets))
 	}
 
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
 	var handler http.Handler = mux
+	handler = withWriteRateLimit(opts.WriteRatePerMinute, now, handler)
 	handler = withSecurityHeaders(handler)
 	handler = withRecover(logger, handler)
 	handler = withAccessLog(logger, handler)

@@ -33,6 +33,8 @@ type App struct {
 	handler http.Handler
 	mcp     http.Handler
 	checks  []server.ReadinessCheck
+
+	writeRatePerMinute int
 }
 
 type settings struct {
@@ -121,7 +123,11 @@ func New(cfg *config.Config, logger *slog.Logger, options ...Option) (*App, erro
 			Service: service, Version: tuning.version, AllowPublish: cfg.MCP.AllowPublish,
 		}))
 	}
-	return &App{Portal: service, Index: manager, Logger: logger, handler: apiHandler, mcp: mcpHandler, checks: checks}, nil
+	return &App{
+		Portal: service, Index: manager, Logger: logger,
+		handler: apiHandler, mcp: mcpHandler, checks: checks,
+		writeRatePerMinute: cfg.Server.WriteRatePerMinute(),
+	}, nil
 }
 
 func sourceOrNil(client *gitlab.Client) index.GitLab {
@@ -145,6 +151,8 @@ func (a *App) Handler(assets fs.FS) http.Handler {
 		Checks: a.checks,
 		API:    a.handler,
 		MCP:    a.mcp,
+
+		WriteRatePerMinute: a.writeRatePerMinute,
 	})
 }
 
