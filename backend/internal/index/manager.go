@@ -69,6 +69,7 @@ type Manager struct {
 type repoState struct {
 	snapshot    *Snapshot
 	stale       bool
+	generation  uint64
 	failedAt    time.Time
 	branch      string
 	branchAt    time.Time
@@ -166,6 +167,7 @@ func (m *Manager) Invalidate(repoID string) {
 	defer m.mu.Unlock()
 	if state, ok := m.states[repoID]; ok {
 		state.stale = true
+		state.generation++
 		state.failedAt = time.Time{}
 	}
 }
@@ -183,6 +185,7 @@ func (m *Manager) InvalidateProject(project, branch string) int {
 			continue
 		}
 		state.stale = true
+		state.generation++
 		state.failedAt = time.Time{}
 		matched++
 	}
@@ -221,6 +224,9 @@ func (m *Manager) afterRefresh(repoID string, refreshErr error) (View, error) {
 
 func (m *Manager) refresh(ctx context.Context, repoID string) error {
 	repo := m.byID[repoID]
+	m.mu.Lock()
+	startedAt := m.states[repoID].generation
+	m.mu.Unlock()
 	snapshot, err := m.build(ctx, repo)
 
 	m.mu.Lock()
@@ -234,7 +240,7 @@ func (m *Manager) refresh(ctx context.Context, repoID string) error {
 		return err
 	}
 	state.snapshot = snapshot
-	state.stale = false
+	state.stale = state.generation != startedAt
 	state.failedAt = time.Time{}
 	state.lastFailure = nil
 	m.collectBlobs()

@@ -765,3 +765,34 @@ func TestSearchSnippetOfATableIsReadable(t *testing.T) {
 		t.Errorf("snippet = %q", results[0].Snippet)
 	}
 }
+
+func TestInvalidationDuringRefreshIsNotLost(t *testing.T) {
+	e := newEnv(t, nil)
+	e.put("docs/a.md", "# A")
+	mustGet(t, e.manager, "docs")
+
+	e.clock.Advance(2 * time.Minute)
+	e.spy.gate = make(chan struct{})
+	loaded := e.spy.trees.Load()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _ = e.manager.Get(context.Background(), "docs")
+	}()
+	deadline := time.Now().Add(5 * time.Second)
+	for e.spy.trees.Load() == loaded {
+		if time.Now().After(deadline) {
+			t.Fatal("refresh did not start")
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	e.manager.InvalidateProject(project, "master")
+	close(e.spy.gate)
+	<-done
+	e.put("docs/b.md", "# B")
+
+	if view := mustGet(t, e.manager, "docs"); len(view.Docs) != 2 {
+		t.Errorf("docs = %d, want the refresh after the invalidation to see both", len(view.Docs))
+	}
+}
