@@ -1,0 +1,35 @@
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  text-align: center;
+  background: var(--tui-background-base);
+  color: var(--tui-text-primary);
+
+  &__title {
+    margin: 0;
+    font: var(--tui-typography-heading-h1);
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    margin: 0;
+    color: var(--tui-text-secondary);
+  }
+
+  &__status {
+    margin: 1rem 0 0;
+
+    &[data-state='ok'] {
+      color: var(--tui-text-positive);
+    }
+
+    &[data-state='unavailable'] {
+      color: var(--tui-text-negative);
+    }
+  }
+}
