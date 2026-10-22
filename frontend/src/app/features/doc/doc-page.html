@@ -1,0 +1,98 @@
+@if (doc(); as d) {
+  <div class="layout">
+    <article class="article">
+      @if (d.stale) {
+        <div class="banner banner--warning" role="status">
+          <tui-icon icon="@tui.triangle-alert" />
+          <span>{{ i18n.t('doc.stale') }}</span>
+        </div>
+      }
+
+      @if (d.warnings.length > 0) {
+        <div class="banner banner--warning" role="alert">
+          <tui-icon icon="@tui.circle-alert" />
+          <div>
+            <strong>{{ i18n.t('doc.warnings') }}</strong>
+            <ul class="banner__list">
+              @for (warning of d.warnings; track $index) {
+                <li>{{ warning }}</li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+
+      <div class="meta">
+        <div class="meta__chips">
+          @if (d.type) {
+            <span class="chip">{{ d.type }}</span>
+          }
+          <span class="meta__path">{{ d.path }}</span>
+        </div>
+        @if (d.webUrl) {
+          <a class="meta__link" [href]="d.webUrl" target="_blank" rel="noopener noreferrer">
+            {{ i18n.t('repo.openGitlab') }}
+            <tui-icon icon="@tui.external-link" />
+          </a>
+        }
+      </div>
+
+      @if (showTitle()) {
+        <h1 class="title">{{ d.title }}</h1>
+      }
+
+      <div #prose class="vf-prose" [innerHTML]="html()"></div>
+    </article>
+
+    @if (toc().length > 1) {
+      <aside class="toc">
+        <nav [attr.aria-label]="i18n.t('doc.onThisPage')">
+          <h2 class="toc__title">{{ i18n.t('doc.onThisPage') }}</h2>
+          <ul class="toc__list">
+            @for (heading of toc(); track heading.id) {
+              <li>
+                <a
+                  class="toc__link"
+                  [class.toc__link--sub]="heading.level === 3"
+                  [class.toc__link--active]="heading.id === activeHeading()"
+                  href=""
+                  (click)="goTo(heading.id, $event)"
+                >
+                  {{ heading.text }}
+                </a>
+              </li>
+            }
+          </ul>
+        </nav>
+      </aside>
+    }
+  </div>
+} @else if (loading()) {
+  <div class="layout">
+    <div class="article" aria-hidden="true">
+      <span class="skeleton skeleton--title"></span>
+      @for (width of placeholders; track $index) {
+        <span class="skeleton" [style.width.%]="width"></span>
+      }
+    </div>
+  </div>
+  <span class="vf-sr-only" role="status">{{ i18n.t('common.loading') }}</span>
+} @else if (error()) {
+  <section class="state" role="alert">
+    <tui-icon class="state__icon" [icon]="notFound() ? '@tui.file-search' : '@tui.circle-alert'" />
+    <h1 class="state__title">
+      {{ notFound() ? i18n.t('doc.notFound.title') : i18n.t('doc.error.title') }}
+    </h1>
+    @if (notFound()) {
+      <p class="state__text">{{ i18n.t('doc.notFound.text') }}</p>
+      <a tuiButton appearance="secondary" size="m" [routerLink]="backLink()">{{
+        i18n.t('doc.backToRepo')
+      }}</a>
+    } @else {
+      <p class="state__text">{{ i18n.t('repo.unavailable.text') }}</p>
+      <button tuiButton type="button" appearance="secondary" size="m" (click)="retry()">
+        {{ i18n.t('doc.retry') }}
+      </button>
+    }
+  </section>
+}

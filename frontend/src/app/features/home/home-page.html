@@ -1,0 +1,63 @@
+<div class="page">
+  <header class="hero">
+    <h1 class="hero__title">{{ i18n.t('home.title') }}</h1>
+    <p class="hero__subtitle">{{ i18n.t('home.subtitle') }}</p>
+    <button type="button" class="hero__search" (click)="ui.openSearch()">
+      <tui-icon icon="@tui.search" />
+      <span>{{ i18n.t('search.placeholder') }}</span>
+      <kbd>⌘K</kbd>
+    </button>
+  </header>
+
+  @if (repos.loading()) {
+    <div class="grid" aria-hidden="true">
+      @for (item of placeholders; track item) {
+        <div class="card card--skeleton"></div>
+      }
+    </div>
+    <span class="vf-sr-only" role="status">{{ i18n.t('common.loading') }}</span>
+  } @else if (repos.error()) {
+    <section class="state" role="alert">
+      <tui-icon class="state__icon" icon="@tui.circle-alert" />
+      <h2 class="state__title">{{ i18n.t('home.error.title') }}</h2>
+      <button tuiButton type="button" appearance="secondary" size="m" (click)="repos.reload()">
+        {{ i18n.t('common.retry') }}
+      </button>
+    </section>
+  } @else if (repos.list().length === 0) {
+    <section class="state">
+      <tui-icon class="state__icon" icon="@tui.git-branch" />
+      <h2 class="state__title">{{ i18n.t('home.empty.title') }}</h2>
+      <p class="state__text">{{ i18n.t('home.empty.text') }}</p>
+    </section>
+  } @else {
+    <ul class="grid">
+      @for (repo of repos.list(); track repo.id) {
+        <li>
+          <a class="card" [routerLink]="link(repo.id)">
+            <div class="card__head">
+              <span class="card__name">{{ repo.name }}</span>
+              @if (!repo.available) {
+                <span class="badge badge--negative">{{ i18n.t('home.unavailable') }}</span>
+              } @else if (repo.stale) {
+                <span class="badge badge--warning">{{ i18n.t('home.stale') }}</span>
+              }
+            </div>
+            <span class="card__project">{{ repo.project }}</span>
+            <div class="card__foot">
+              @if (repo.available) {
+                <span>{{ i18n.plural('repo.docs', repo.docCount) }}</span>
+                @if (repo.hiddenCount > 0) {
+                  <span class="card__muted">{{
+                    i18n.plural('repo.drafts', repo.hiddenCount)
+                  }}</span>
+                }
+              }
+              <tui-icon class="card__arrow" icon="@tui.arrow-up-right" />
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>

@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { TuiRoot } from '@taiga-ui/core';
 
 @Component({
-  selector: 'app-root',
+  selector: 'vf-root',
   imports: [RouterOutlet, TuiRoot],
   templateUrl: './app.html',
 })

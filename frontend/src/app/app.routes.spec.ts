@@ -1,45 +1,30 @@
-import { Location } from '@angular/common';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { RouterTestingHarness } from '@angular/router/testing';
-import { provideTaiga } from '@taiga-ui/core';
-import { routes } from './app.routes';
-import { Home } from './features/home/home';
+import { UrlSegment } from '@angular/router';
+import { docMatcher } from './app.routes';
 
-describe('routes', () => {
-  let http: HttpTestingController;
+function segments(...paths: string[]): UrlSegment[] {
+  return paths.map((path) => new UrlSegment(path, {}));
+}
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [
-        provideRouter(routes),
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        provideTaiga(),
-      ],
-    });
-    http = TestBed.inject(HttpTestingController);
+describe('docMatcher', () => {
+  it('matches a repository followed by a document path', () => {
+    const result = docMatcher(segments('r', 'platform', 'docs', 'guide', 'start.md'));
+    expect(result?.consumed).toHaveLength(5);
+    expect(result?.posParams?.['repo'].path).toBe('platform');
+    expect(result?.posParams?.['path'].path).toBe('docs/guide/start.md');
   });
 
-  afterEach(() => http.verify());
-
-  it('lazy loads the home page at the root', async () => {
-    const harness = await RouterTestingHarness.create();
-    const component = await harness.navigateByUrl('/', Home);
-    http.expectOne('/healthz').flush({ status: 'ok' });
-
-    expect(component).toBeInstanceOf(Home);
-    expect(TestBed.inject(Location).path()).toBe('');
+  it('matches a single segment document path', () => {
+    const result = docMatcher(segments('r', 'platform', 'README.md'));
+    expect(result?.posParams?.['path'].path).toBe('README.md');
   });
 
-  it('redirects unknown paths to the root', async () => {
-    const harness = await RouterTestingHarness.create();
-    const component = await harness.navigateByUrl('/does/not/exist', Home);
-    http.expectOne('/healthz').flush({ status: 'ok' });
+  it('does not match the repository page itself', () => {
+    expect(docMatcher(segments('r', 'platform'))).toBeNull();
+  });
 
-    expect(component).toBeInstanceOf(Home);
-    expect(TestBed.inject(Location).path()).toBe('');
+  it('does not match other prefixes or the root', () => {
+    expect(docMatcher(segments('x', 'platform', 'a.md'))).toBeNull();
+    expect(docMatcher([])).toBeNull();
+    expect(docMatcher(segments('r'))).toBeNull();
   });
 });

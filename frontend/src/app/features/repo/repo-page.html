@@ -1,0 +1,100 @@
+<div class="page">
+  <header class="head">
+    <div class="head__text">
+      <h1 class="head__title">{{ info()?.name ?? repo() }}</h1>
+      @if (info(); as repoInfo) {
+        <p class="head__meta">
+          <span>{{ repoInfo.project }}</span>
+          @if (repoInfo.branch) {
+            <span class="chip"><tui-icon icon="@tui.git-branch" /> {{ repoInfo.branch }}</span>
+          }
+        </p>
+      }
+    </div>
+    <div class="head__actions">
+      @if (info()?.webUrl; as url) {
+        <a
+          tuiButton
+          appearance="flat"
+          size="m"
+          [href]="url"
+          target="_blank"
+          rel="noopener noreferrer"
+          iconStart="@tui.external-link"
+        >
+          {{ i18n.t('repo.openGitlab') }}
+        </a>
+      }
+      <button
+        tuiButton
+        type="button"
+        appearance="secondary"
+        size="m"
+        iconStart="@tui.refresh-cw"
+        [disabled]="refreshing()"
+        (click)="refresh()"
+      >
+        {{ refreshing() ? i18n.t('repo.refreshing') : i18n.t('repo.refresh') }}
+      </button>
+    </div>
+  </header>
+
+  @if (tree()) {
+    @if (tree()?.stale) {
+      <div class="banner" role="status">
+        <tui-icon icon="@tui.triangle-alert" />
+        {{ i18n.t('doc.stale') }}
+      </div>
+    }
+
+    @if (docCount() === 0) {
+      <section class="state">
+        <tui-icon class="state__icon" icon="@tui.file-text" />
+        <h2 class="state__title">{{ i18n.t('repo.empty.title') }}</h2>
+        <p class="state__text">{{ i18n.t('repo.empty.text') }}</p>
+      </section>
+    } @else {
+      <p class="summary">
+        {{ i18n.plural('repo.docs', docCount()) }}
+        @if ((info()?.hiddenCount ?? 0) > 0) {
+          · {{ i18n.plural('repo.drafts', info()?.hiddenCount ?? 0) }}
+        }
+      </p>
+      @for (group of groups(); track group.folder) {
+        <section class="group">
+          <h2 class="group__title">{{ group.folder || '/' }}</h2>
+          <ul class="docs">
+            @for (doc of group.docs; track doc.path) {
+              <li>
+                <a class="doc" [routerLink]="link(doc.path)">
+                  <tui-icon class="doc__icon" icon="@tui.file-text" />
+                  <span class="doc__title">{{ doc.title }}</span>
+                  @if (doc.type) {
+                    <span class="chip">{{ doc.type }}</span>
+                  }
+                  <tui-icon class="doc__arrow" icon="@tui.chevron-right" />
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  } @else if (failed()) {
+    <section class="state" role="alert">
+      <tui-icon class="state__icon" icon="@tui.circle-alert" />
+      <h2 class="state__title">{{ i18n.t('repo.unavailable.title') }}</h2>
+      <p class="state__text">{{ i18n.t('repo.unavailable.text') }}</p>
+      <button tuiButton type="button" appearance="secondary" size="m" (click)="retry()">
+        {{ i18n.t('common.retry') }}
+      </button>
+    </section>
+  } @else {
+    <div class="skeleton" aria-hidden="true">
+      @for (item of placeholders; track item) {
+        <span class="skeleton__row"></span>
+      }
+    </div>
+    <span class="vf-sr-only" role="status">{{ i18n.t('common.loading') }}</span>
+  }
+</div>
