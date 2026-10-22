@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { TuiIcon } from '@taiga-ui/core';
+import { Author } from '../core/author';
 import { I18n, Lang } from '../core/i18n';
 import { Theme, ThemePreference } from '../core/theme';
 import { Popover } from '../shared/popover';
@@ -39,6 +40,20 @@ import { Popover } from '../shared/popover';
         </div>
       </section>
 
+      <section class="group">
+        <label class="group__title" for="vf-author-name">{{ i18n.t('settings.name') }}</label>
+        <input
+          id="vf-author-name"
+          class="name"
+          type="text"
+          maxlength="80"
+          autocomplete="name"
+          [placeholder]="i18n.t('settings.namePlaceholder')"
+          [value]="author.name()"
+          (input)="author.set($any($event.target).value)"
+        />
+      </section>
+
       <section class="group" [attr.aria-label]="i18n.t('lang.label')">
         <h2 class="group__title">{{ i18n.t('lang.label') }}</h2>
         <div class="segments" role="radiogroup" [attr.aria-label]="i18n.t('lang.label')">
@@ -62,6 +77,7 @@ import { Popover } from '../shared/popover';
 export class SettingsMenu {
   protected readonly i18n = inject(I18n);
   protected readonly theme = inject(Theme);
+  protected readonly author = inject(Author);
 
   protected readonly themes: {
     value: ThemePreference;

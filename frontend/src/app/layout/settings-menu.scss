@@ -55,6 +55,26 @@
   }
 }
 
+.group__title {
+  display: block;
+}
+
+.name {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--vf-border);
+  border-radius: var(--vf-radius-s);
+  background: var(--vf-surface);
+  color: var(--vf-text);
+  font-size: 0.875rem;
+
+  &:focus {
+    border-color: var(--vf-accent);
+    outline: none;
+  }
+}
+
 .segments {
   display: grid;
   grid-auto-flow: column;

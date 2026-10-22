@@ -22,6 +22,7 @@ describe('Shell', () => {
       providers: provideApp([{ path: '**', component: Child }]),
     });
     TestBed.inject(I18n).setLang('en');
+    pendingDrafts = [];
     router = TestBed.inject(Router);
     ui = TestBed.inject(Ui);
   });
@@ -34,6 +35,8 @@ describe('Shell', () => {
     fixture.detectChanges();
   }
 
+  let pendingDrafts: object[] = [];
+
   async function create(url: string, tree: object | number | null = TREE): Promise<HTMLElement> {
     await router.navigateByUrl(url);
     fixture = TestBed.createComponent(Shell);
@@ -42,7 +45,10 @@ describe('Shell', () => {
     http()
       .match('/api/v1/repos')
       .forEach((request) => request.flush({ repos: [REPO, SECOND_REPO] }));
-    const isRepo = /^\/r\/platform/.test(url);
+    http()
+      .match('/api/v1/drafts')
+      .forEach((request) => request.flush({ drafts: pendingDrafts }));
+    const isRepo = /^\/(r|edit|new)\/platform/.test(url);
     if (isRepo && tree !== null) {
       if (typeof tree === 'number') {
         fail('/api/v1/repos/platform/tree', tree, { error: 'upstream_unavailable', message: 'x' });
@@ -223,5 +229,27 @@ describe('Shell', () => {
     TestBed.inject(I18n).setLang('ru');
     const element = await create('/');
     expect(element.querySelector('.sidebar')?.getAttribute('aria-label')).toBe('Документы');
+  });
+
+  it('links to the drafts without a counter when there are none', async () => {
+    const element = await create('/');
+    const link = element.querySelector('.drafts-link') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/drafts');
+    expect(link.textContent).toContain('Drafts');
+    expect(element.querySelector('.drafts-link__count')).toBeNull();
+  });
+
+  it('shows how many drafts there are', async () => {
+    pendingDrafts = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+    const element = await create('/');
+    expect(element.querySelector('.drafts-link__count')?.textContent).toBe('3');
+  });
+
+  it('keeps the tree while editing a document', async () => {
+    const element = await create('/edit/platform/docs/guide/start.md');
+    expect(element.querySelector('vf-doc-tree')).not.toBeNull();
+    expect(
+      [...element.querySelectorAll('.crumbs__item')].map((item) => item.textContent?.trim()),
+    ).toEqual(['Platform', 'docs', 'guide', 'start.md']);
   });
 });

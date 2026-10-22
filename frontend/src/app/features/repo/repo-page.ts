@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TuiButton, TuiIcon } from '@taiga-ui/core';
 import { Api, ApiError } from '../../core/api';
 import { I18n } from '../../core/i18n';
-import { docLink } from '../../core/links';
+import { docLink, newLink } from '../../core/links';
 import { usePageTitle } from '../../core/page-title';
 import { Repos } from '../../core/repos';
 import { Toasts } from '../../core/toast';
@@ -42,6 +42,10 @@ export class RepoPage {
 
   constructor() {
     usePageTitle(() => [this.info()?.name ?? this.repo()]);
+  }
+
+  protected newDocLink(): string[] {
+    return newLink(this.repo());
   }
 
   protected link(path: string): string[] {

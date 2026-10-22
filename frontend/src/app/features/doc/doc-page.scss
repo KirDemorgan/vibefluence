@@ -35,6 +35,12 @@
     white-space: nowrap;
   }
 
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
   &__link {
     display: inline-flex;
     align-items: center;
@@ -84,6 +90,17 @@
   &--warning {
     background: var(--vf-warning-soft);
     color: var(--vf-warning);
+  }
+
+  &--info {
+    background: var(--vf-accent-soft);
+    color: var(--vf-accent);
+  }
+
+  &__action {
+    margin-left: auto;
+    color: inherit;
+    font-weight: 600;
   }
 
   tui-icon {

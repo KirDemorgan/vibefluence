@@ -72,7 +72,12 @@ describe('RepoPage', () => {
     expect(element.querySelector('h1')?.textContent).toBe('Platform');
     expect(element.querySelector('.head__meta')?.textContent).toContain('demo/platform');
     expect(element.querySelector('.chip')?.textContent).toContain('master');
-    expect(element.querySelector('.head__actions a')?.getAttribute('href')).toBe(REPO.webUrl);
+    expect(element.querySelector('.head__actions a[target="_blank"]')?.getAttribute('href')).toBe(
+      REPO.webUrl,
+    );
+    expect(element.querySelector('.head__actions a[href="/new/platform"]')?.textContent).toContain(
+      'New document',
+    );
     expect(document.title).toBe('Platform · Vibefluence');
   });
 

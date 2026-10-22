@@ -1,0 +1,122 @@
+<div class="page">
+  <header class="head">
+    <div>
+      <h1 class="head__title">{{ i18n.t('drafts.title') }}</h1>
+      <p class="head__subtitle">{{ i18n.t('drafts.subtitle') }}</p>
+    </div>
+    @if (firstRepo(); as repo) {
+      <a
+        tuiButton
+        appearance="secondary"
+        size="m"
+        iconStart="@tui.plus"
+        [routerLink]="newLink(repo)"
+      >
+        {{ i18n.t('repo.newDoc') }}
+      </a>
+    }
+  </header>
+
+  @if (drafts.loading()) {
+    <div class="skeleton" aria-hidden="true">
+      @for (item of placeholders; track item) {
+        <span class="skeleton__row"></span>
+      }
+    </div>
+    <span class="vf-sr-only" role="status">{{ i18n.t('common.loading') }}</span>
+  } @else if (drafts.error()) {
+    <section class="state" role="alert">
+      <tui-icon class="state__icon" icon="@tui.circle-alert" />
+      <h2 class="state__title">{{ i18n.t('drafts.error') }}</h2>
+      <button tuiButton type="button" appearance="secondary" size="m" (click)="drafts.reload()">
+        {{ i18n.t('common.retry') }}
+      </button>
+    </section>
+  } @else if (groups().length === 0) {
+    <section class="state">
+      <tui-icon class="state__icon" icon="@tui.file-pen" />
+      <h2 class="state__title">{{ i18n.t('drafts.emptyTitle') }}</h2>
+      <p class="state__text">{{ i18n.t('drafts.emptyText') }}</p>
+    </section>
+  } @else {
+    @for (group of groups(); track group.repo) {
+      <section class="group">
+        <h2 class="group__title">{{ group.name }}</h2>
+        <ul class="list">
+          @for (draft of group.items; track draft.id) {
+            <li class="item">
+              <div class="item__main">
+                <a class="item__title" [routerLink]="edit(draft)">{{
+                  draft.title || draft.path
+                }}</a>
+                <div class="item__meta">
+                  <span class="item__path">{{ draft.path }}</span>
+                  @if (draft.isNew) {
+                    <span class="chip chip--accent">{{ i18n.t('drafts.newBadge') }}</span>
+                  }
+                  <span class="chip" [class.chip--positive]="draft.status === 'published'">
+                    {{
+                      draft.status === 'published'
+                        ? i18n.t('drafts.willPublish')
+                        : i18n.t('doc.status.draft')
+                    }}
+                  </span>
+                  <span class="item__time">{{
+                    i18n.t('drafts.updated', { time: when(draft) })
+                  }}</span>
+                  @if (draft.mergeRequestUrl) {
+                    <a
+                      class="item__mr"
+                      [href]="draft.mergeRequestUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ i18n.t('drafts.mergeRequest') }}
+                    </a>
+                  }
+                </div>
+              </div>
+              <div class="item__actions">
+                <a tuiButton appearance="secondary" size="s" [routerLink]="edit(draft)">{{
+                  i18n.t('drafts.edit')
+                }}</a>
+                @if (confirming() === draft.id) {
+                  <button
+                    tuiButton
+                    type="button"
+                    appearance="primary"
+                    size="s"
+                    (click)="remove(draft)"
+                  >
+                    {{ i18n.t('drafts.deleteConfirm') }}
+                  </button>
+                  <button
+                    tuiButton
+                    type="button"
+                    appearance="flat"
+                    size="s"
+                    (click)="askDelete(draft)"
+                  >
+                    {{ i18n.t('common.cancel') }}
+                  </button>
+                } @else {
+                  <button
+                    tuiButton
+                    type="button"
+                    appearance="flat"
+                    size="s"
+                    iconStart="@tui.trash-2"
+                    [attr.aria-label]="i18n.t('drafts.delete')"
+                    (click)="askDelete(draft)"
+                  >
+                    {{ i18n.t('drafts.delete') }}
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>

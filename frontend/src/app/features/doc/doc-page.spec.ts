@@ -13,10 +13,12 @@ const URL = '/api/v1/repos/platform/doc?path=docs/guide/start.md';
 
 describe('DocPage', () => {
   let fixture: ComponentFixture<DocPage>;
+  let existingDrafts: object[];
   let observerCallbacks: IntersectionObserverCallback[];
 
   beforeEach(() => {
     localStorage.clear();
+    existingDrafts = [];
     observerCallbacks = [];
     vi.stubGlobal(
       'IntersectionObserver',
@@ -65,6 +67,9 @@ describe('DocPage', () => {
     http()
       .match('/api/v1/repos')
       .forEach((request) => request.flush({ repos: [REPO] }));
+    http()
+      .match('/api/v1/drafts')
+      .forEach((request) => request.flush({ drafts: existingDrafts }));
     if (typeof response === 'number') {
       fail(
         URL,
@@ -297,5 +302,35 @@ describe('DocPage', () => {
     TestBed.inject(I18n).setLang('ru');
     const element = await create();
     expect(element.querySelector('.toc__title')?.textContent).toBe('На этой странице');
+  });
+
+  it('offers to edit the document', async () => {
+    const element = await create();
+    const edit = element.querySelector('.meta__actions a') as HTMLAnchorElement;
+    expect(edit.textContent).toContain('Edit');
+    expect(edit.getAttribute('href')).toBe('/edit/platform/docs/guide/start.md');
+    expect(element.querySelector('.banner--info')).toBeNull();
+  });
+
+  it('points to an existing draft of the document', async () => {
+    existingDrafts = [
+      {
+        id: '0123456789abcdef',
+        repo: 'platform',
+        path: 'docs/guide/start.md',
+        title: 'x',
+        status: 'draft',
+        isNew: false,
+        author: '',
+        updatedAt: '2026-10-22T12:00:00Z',
+        baseBlobId: 'abc',
+      },
+    ];
+    const element = await create();
+    const banner = element.querySelector('.banner--info') as HTMLElement;
+    expect(banner.textContent).toContain('draft of this document');
+    expect(banner.querySelector('a')?.getAttribute('href')).toBe(
+      '/edit/platform/docs/guide/start.md',
+    );
   });
 });

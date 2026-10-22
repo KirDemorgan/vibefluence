@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideApp } from '../../testing';
+import { Author } from '../core/author';
 import { I18n } from '../core/i18n';
 import { Theme } from '../core/theme';
 import { SettingsMenu } from './settings-menu';
@@ -67,5 +68,14 @@ describe('SettingsMenu', () => {
       'Тёмное',
     ]);
     expect(radios(element, 1)[0].getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('stores the name used for commits', () => {
+    const element = create();
+    const input = element.querySelector('#vf-author-name') as HTMLInputElement;
+    input.value = '  Alex  ';
+    input.dispatchEvent(new Event('input'));
+    expect(TestBed.inject(Author).name()).toBe('Alex');
+    expect(localStorage.getItem('vf.author')).toBe('Alex');
   });
 });

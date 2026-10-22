@@ -1,9 +1,10 @@
 import { Component, computed, effect, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TuiIcon } from '@taiga-ui/core';
 import { I18n } from '../core/i18n';
 import { docLink, repoLink } from '../core/links';
 import { Repos } from '../core/repos';
+import { Drafts } from '../core/drafts';
 import { RouteState } from '../core/route-state';
 import { Trees } from '../core/trees';
 import { Ui } from '../core/ui';
@@ -19,7 +20,16 @@ interface Crumb {
 
 @Component({
   selector: 'vf-shell',
-  imports: [RouterOutlet, RouterLink, TuiIcon, DocTree, RepoSwitcher, SettingsMenu, SearchPalette],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    TuiIcon,
+    DocTree,
+    RepoSwitcher,
+    SettingsMenu,
+    SearchPalette,
+  ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
   host: {
@@ -31,6 +41,7 @@ export class Shell {
   protected readonly ui = inject(Ui);
   protected readonly repos = inject(Repos);
   protected readonly trees = inject(Trees);
+  protected readonly drafts = inject(Drafts);
   private readonly route = inject(RouteState);
 
   protected readonly repoId = this.route.repo;

@@ -14,7 +14,8 @@ import { TuiButton, TuiIcon } from '@taiga-ui/core';
 import { signal } from '@angular/core';
 import { Api, ApiError } from '../../core/api';
 import { I18n } from '../../core/i18n';
-import { repoLink } from '../../core/links';
+import { Drafts } from '../../core/drafts';
+import { editLink, repoLink } from '../../core/links';
 import { DocumentResponse, Heading } from '../../core/models';
 import { usePageTitle } from '../../core/page-title';
 import { Repos } from '../../core/repos';
@@ -40,6 +41,7 @@ export class DocPage {
   private readonly repos = inject(Repos);
   private readonly router = inject(Router);
   private readonly route = inject(RouteState);
+  private readonly drafts = inject(Drafts);
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly repo = input.required<string>();
@@ -75,6 +77,10 @@ export class DocPage {
   protected readonly notFound = computed(() => this.error()?.isNotFound === true);
   protected readonly loading = computed(() => this.resource.isLoading() && !this.doc());
   protected readonly repoName = computed(() => this.repos.byId(this.repo())?.name ?? this.repo());
+  protected readonly draft = computed(() => {
+    const doc = this.doc();
+    return doc ? this.drafts.forPath(doc.repo, doc.path) : undefined;
+  });
   protected readonly activeHeading = signal<string | null>(null);
   protected readonly placeholders = [92, 78, 86, 64, 90, 72];
 
@@ -106,6 +112,10 @@ export class DocPage {
       headings.forEach((heading) => observer.observe(heading));
       onCleanup(() => observer.disconnect());
     });
+  }
+
+  protected editTarget(): string[] {
+    return editLink(this.repo(), this.path());
   }
 
   protected backLink(): string[] {
