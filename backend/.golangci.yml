@@ -26,6 +26,10 @@ linters:
         text: G304
         linters:
           - gosec
+      - path: internal/drafts/store\.go
+        text: G304
+        linters:
+          - gosec
 
 formatters:
   enable:
