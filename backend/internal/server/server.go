@@ -38,6 +38,8 @@ func NewHandler(opts Options) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealth)
 	mux.HandleFunc("GET /readyz", handleReady(logger, opts.Checks))
+	collected := newMetrics()
+	mux.Handle("GET /metrics", collected.handler())
 	if opts.API != nil {
 		mux.Handle("/api/", opts.API)
 	}
@@ -56,6 +58,7 @@ func NewHandler(opts Options) http.Handler {
 	handler = withWriteRateLimit(opts.WriteRatePerMinute, now, handler)
 	handler = withSecurityHeaders(handler)
 	handler = withRecover(logger, handler)
+	handler = collected.middleware(handler)
 	handler = withAccessLog(logger, handler)
 	handler = withRequestID(handler)
 	return handler
