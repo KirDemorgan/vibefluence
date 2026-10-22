@@ -8,6 +8,7 @@ import { EnvironmentProviders, Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Routes } from '@angular/router';
 import { provideTaiga } from '@taiga-ui/core';
+import axe from 'axe-core';
 import { DocumentResponse, Repo, TreeResponse } from './app/core/models';
 
 export const REPO: Repo = {
@@ -122,4 +123,14 @@ export function fail(
   body: object | string | null = {},
 ): void {
   flush(url, body, { status, statusText: 'error' });
+}
+
+export async function accessibilityViolations(element: HTMLElement): Promise<string[]> {
+  const results = await axe.run(element, {
+    rules: { 'color-contrast': { enabled: false }, region: { enabled: false } },
+  });
+  return results.violations.map(
+    (violation) =>
+      `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`,
+  );
 }
