@@ -15,4 +15,5 @@ require (
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
 )

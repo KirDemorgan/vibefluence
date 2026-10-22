@@ -502,3 +502,16 @@ func TestRequestsCarryTokenAndUserAgent(t *testing.T) {
 		t.Errorf("headers = %v", header)
 	}
 }
+
+func TestBranch(t *testing.T) {
+	f := newFixture(t)
+	f.fake.PutFile(project, "master", "docs/a.md", "x")
+
+	branch, err := f.client.Branch(context.Background(), project, "master")
+	if err != nil || branch.Name != "master" || len(branch.CommitID) != 40 {
+		t.Errorf("branch = %+v, err = %v", branch, err)
+	}
+	if _, err := f.client.Branch(context.Background(), project, "release/1"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("missing branch err = %v", err)
+	}
+}

@@ -34,6 +34,11 @@ type TreeEntry struct {
 	Mode string `json:"mode"`
 }
 
+type Branch struct {
+	Name     string `json:"name"`
+	CommitID string `json:"-"`
+}
+
 type File struct {
 	Path         string
 	Ref          string
@@ -158,4 +163,17 @@ func (c *Client) File(ctx context.Context, project, ref, filePath string) (File,
 		BlobID:       decoded.BlobID,
 		LastCommitID: decoded.LastCommitID,
 	}, nil
+}
+
+func (c *Client) Branch(ctx context.Context, project, name string) (Branch, error) {
+	var decoded struct {
+		Name   string `json:"name"`
+		Commit struct {
+			ID string `json:"id"`
+		} `json:"commit"`
+	}
+	if err := c.getJSON(ctx, projectEndpoint(project, "/repository/branches/"+url.PathEscape(name)), nil, &decoded); err != nil {
+		return Branch{}, err
+	}
+	return Branch{Name: decoded.Name, CommitID: decoded.Commit.ID}, nil
 }

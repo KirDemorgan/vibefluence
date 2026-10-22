@@ -26,6 +26,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v4/projects/{id}/repository/files/{path}/raw", s.handleFileRaw)
 	s.mux.HandleFunc("GET /api/v4/projects/{id}/repository/files/{path}", s.handleFile)
 	s.mux.HandleFunc("GET /api/v4/projects/{id}/repository/blobs/{sha}/raw", s.handleBlobRaw)
+	s.mux.HandleFunc("GET /api/v4/projects/{id}/repository/branches/{branch}", s.handleBranch)
 	s.mux.HandleFunc("POST /api/v4/projects/{id}/repository/commits", s.handleCreateCommit)
 	s.mux.HandleFunc("POST /api/v4/projects/{id}/merge_requests", s.handleCreateMergeRequest)
 	s.mux.HandleFunc("GET /api/v4/projects/{id}/merge_requests/{iid}", s.handleGetMergeRequest)
@@ -257,6 +258,24 @@ func setFileHeaders(w http.ResponseWriter, filePath, ref, commitID string, store
 	header.Set("X-Gitlab-File-Name", filePath[strings.LastIndex(filePath, "/")+1:])
 	header.Set("X-Gitlab-Ref", ref)
 	header.Set("X-Gitlab-Size", strconv.Itoa(len(stored.content)))
+}
+
+func (s *Server) handleBranch(w http.ResponseWriter, r *http.Request) {
+	project, ok := s.projectFor(w, r)
+	if !ok {
+		return
+	}
+	name := r.PathValue("branch")
+	found, exists := project.branches[name]
+	if !exists {
+		writeMessage(w, http.StatusNotFound, "404 Branch Not Found")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"name":    name,
+		"default": name == project.defaultBranch,
+		"commit":  map[string]string{"id": found.head},
+	})
 }
 
 func (s *Server) handleBlobRaw(w http.ResponseWriter, r *http.Request) {
