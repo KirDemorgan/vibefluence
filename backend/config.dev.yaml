@@ -1,0 +1,18 @@
+server:
+  addr: "127.0.0.1:8080"
+  dataDir: ./data
+
+log:
+  level: debug
+  format: text
+
+gitlab:
+  baseUrl: http://127.0.0.1:8929
+
+repositories:
+  - id: platform
+    name: Platform
+    project: demo/platform
+    branch: master
+    paths:
+      - docs

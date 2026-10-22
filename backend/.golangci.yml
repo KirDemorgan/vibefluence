@@ -1,0 +1,33 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - noctx
+    - unconvert
+    - whitespace
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - noctx
+      - path: internal/testing/
+        linters:
+          - gosec
+      - path: internal/config/config\.go
+        text: G304
+        linters:
+          - gosec
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

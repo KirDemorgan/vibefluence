@@ -1,0 +1,21 @@
+server:
+  addr: ":8080"
+  dataDir: ./data
+  shutdownTimeout: 15s
+
+log:
+  level: info
+  format: json
+
+gitlab:
+  baseUrl: https://gitlab.example.com
+  botUsername: vibefluence-bot
+
+repositories:
+  - id: platform
+    name: Platform
+    project: group/platform
+    branch: master
+    paths:
+      - docs
+    autoMerge: true
