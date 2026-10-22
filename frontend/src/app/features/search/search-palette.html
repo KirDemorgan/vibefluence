@@ -1,0 +1,125 @@
+<dialog #dialog class="palette" [attr.aria-label]="i18n.t('search.open')" (close)="onClose()">
+  <div class="panel">
+    <div class="field">
+      <tui-icon class="field__icon" icon="@tui.search" />
+      <input
+        #input
+        class="field__input"
+        type="text"
+        role="combobox"
+        autocomplete="off"
+        spellcheck="false"
+        aria-autocomplete="list"
+        aria-controls="vf-search-results"
+        [attr.aria-expanded]="results().length > 0"
+        [attr.aria-activedescendant]="results().length > 0 ? 'vf-search-option-' + active() : null"
+        [attr.aria-label]="i18n.t('search.placeholder')"
+        [placeholder]="i18n.t('search.placeholder')"
+        [value]="query()"
+        (input)="onInput($event)"
+        (keydown)="onKeydown($event)"
+      />
+      <button
+        type="button"
+        class="field__close"
+        [attr.aria-label]="i18n.t('search.close')"
+        (click)="ui.closeSearch()"
+      >
+        <kbd>esc</kbd>
+      </button>
+    </div>
+
+    @if (repoId()) {
+      <div class="scopes" role="radiogroup" [attr.aria-label]="i18n.t('search.open')">
+        <button
+          type="button"
+          class="scope"
+          role="radio"
+          [attr.aria-checked]="scope() === 'repo'"
+          (click)="setScope('repo')"
+        >
+          {{ i18n.t('search.scopeRepo') }}
+        </button>
+        <button
+          type="button"
+          class="scope"
+          role="radio"
+          [attr.aria-checked]="scope() === 'all'"
+          (click)="setScope('all')"
+        >
+          {{ i18n.t('search.scopeAll') }}
+        </button>
+      </div>
+    }
+
+    <div class="body" aria-live="polite">
+      @switch (state()) {
+        @case ('idle') {
+          <p class="message">{{ i18n.t('search.hint') }}</p>
+        }
+        @case ('loading') {
+          <p class="message">{{ i18n.t('common.loading') }}</p>
+        }
+        @case ('error') {
+          <p class="message message--error" role="alert">{{ i18n.t('search.error') }}</p>
+        }
+        @case ('ready') {
+          @if (results().length === 0) {
+            <p class="message">{{ i18n.t('search.empty', { query: query().trim() }) }}</p>
+          } @else {
+            <ul
+              class="results"
+              id="vf-search-results"
+              role="listbox"
+              [attr.aria-label]="i18n.t('search.results')"
+            >
+              @for (result of results(); track result.repo + result.path; let index = $index) {
+                <li
+                  class="result"
+                  role="option"
+                  [id]="'vf-search-option-' + index"
+                  [attr.data-index]="index"
+                  [attr.aria-selected]="index === active()"
+                  (mouseenter)="active.set(index)"
+                >
+                  <div class="result__head">
+                    <tui-icon class="result__icon" icon="@tui.file-text" />
+                    <span class="result__title">
+                      @for (segment of segments(result.title); track $index) {
+                        @if (segment.hit) {
+                          <mark>{{ segment.text }}</mark>
+                        } @else {
+                          {{ segment.text }}
+                        }
+                      }
+                    </span>
+                    @if (result.type) {
+                      <span class="result__type">{{ result.type }}</span>
+                    }
+                  </div>
+                  <div class="result__path">
+                    @if (showRepoName()) {
+                      <span>{{ repoName(result.repo) }} ·</span>
+                    }
+                    {{ result.path }}
+                  </div>
+                  @if (result.snippet) {
+                    <p class="result__snippet">
+                      @for (segment of segments(result.snippet); track $index) {
+                        @if (segment.hit) {
+                          <mark>{{ segment.text }}</mark>
+                        } @else {
+                          {{ segment.text }}
+                        }
+                      }
+                    </p>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        }
+      }
+    </div>
+  </div>
+</dialog>

@@ -1,0 +1,49 @@
+<div class="filter">
+  <tui-icon icon="@tui.search" class="filter__icon" />
+  <input
+    class="filter__input"
+    type="search"
+    autocomplete="off"
+    spellcheck="false"
+    [attr.aria-label]="i18n.t('nav.filter')"
+    [placeholder]="i18n.t('nav.filter')"
+    [value]="filter()"
+    (input)="setFilter($event)"
+    (keydown.escape)="clearFilter()"
+  />
+</div>
+
+@if (empty()) {
+  <p class="note">{{ i18n.t('nav.noDocs') }}</p>
+} @else if (rows().length === 0) {
+  <p class="note">{{ i18n.t('nav.noMatches') }}</p>
+} @else {
+  <ul class="list" [attr.aria-label]="i18n.t('nav.documents')">
+    @for (row of rows(); track row.node.path) {
+      <li class="item" [style.--depth]="row.depth">
+        @if (row.node.kind === 'folder') {
+          <button
+            type="button"
+            class="row row--folder"
+            [attr.aria-expanded]="row.open"
+            [disabled]="filtering()"
+            (click)="toggle(row.node.path)"
+          >
+            <tui-icon class="chevron" [class.chevron--open]="row.open" icon="@tui.chevron-right" />
+            <span class="label">{{ label(row.node) }}</span>
+          </button>
+        } @else {
+          <a
+            class="row row--doc"
+            [routerLink]="link(row.node.path)"
+            [attr.aria-current]="row.node.path === activePath() ? 'page' : null"
+            [attr.title]="row.node.path"
+          >
+            <tui-icon class="doc-icon" icon="@tui.file-text" />
+            <span class="label">{{ label(row.node) }}</span>
+          </a>
+        }
+      </li>
+    }
+  </ul>
+}

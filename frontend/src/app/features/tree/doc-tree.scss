@@ -1,0 +1,130 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.filter {
+  position: relative;
+  margin: 0 0.75rem 0.5rem;
+
+  &__icon {
+    position: absolute;
+    top: 50%;
+    left: 0.7rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--vf-text-3);
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  &__input {
+    width: 100%;
+    height: 2.1rem;
+    padding: 0 0.75rem 0 2.1rem;
+    border: 1px solid transparent;
+    border-radius: var(--vf-radius-s);
+    background: var(--vf-surface-2);
+    font-size: 0.875rem;
+    transition:
+      border-color var(--vf-fast),
+      background var(--vf-fast);
+
+    &::placeholder {
+      color: var(--vf-text-3);
+    }
+
+    &:focus {
+      border-color: var(--vf-accent);
+      background: var(--vf-surface);
+      outline: none;
+    }
+  }
+}
+
+.note {
+  margin: 0.5rem 1.25rem;
+  color: var(--vf-text-3);
+  font-size: 0.875rem;
+}
+
+.list {
+  min-height: 0;
+  margin: 0;
+  padding: 0 0.5rem 1rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.item {
+  --indent: calc(var(--depth, 0) * 0.9rem);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.25rem 0.6rem 0.25rem calc(0.5rem + var(--indent));
+  border: 0;
+  border-radius: var(--vf-radius-s);
+  background: none;
+  color: var(--vf-text-2);
+  font-size: 0.875rem;
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--vf-fast),
+    color var(--vf-fast);
+
+  &:hover {
+    background: var(--vf-surface-2);
+    color: var(--vf-text);
+  }
+
+  &[aria-current='page'] {
+    background: var(--vf-accent-soft);
+    color: var(--vf-accent);
+    font-weight: 600;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.row--folder {
+  color: var(--vf-text);
+  font-weight: 560;
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron,
+.doc-icon {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--vf-text-3);
+}
+
+.chevron {
+  transition: transform var(--vf-fast) var(--vf-ease);
+
+  &--open {
+    transform: rotate(90deg);
+  }
+}
+
+.row[aria-current='page'] .doc-icon {
+  color: inherit;
+}

@@ -1,0 +1,113 @@
+<a class="skip" href="" (click)="skipToContent($event)">{{ i18n.t('nav.skip') }}</a>
+
+<div class="shell" [class.shell--open]="ui.navOpen()">
+  <aside class="sidebar" id="sidebar" [attr.aria-label]="i18n.t('nav.documents')">
+    <a class="brand" [routerLink]="homeLink()">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path
+            d="M5 6.5 12 19l7-12.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </span>
+      <span class="brand__name">{{ i18n.t('app.name') }}</span>
+    </a>
+
+    <vf-repo-switcher />
+
+    <div class="sidebar__body">
+      @if (repoId(); as id) {
+        @if (trees.tree(); as tree) {
+          <vf-doc-tree [repo]="id" [roots]="tree.roots" [activePath]="activePath()" />
+        } @else if (trees.loading()) {
+          <div class="skeleton" aria-hidden="true">
+            @for (width of skeletonWidths; track $index) {
+              <span class="skeleton__line" [style.width.%]="width"></span>
+            }
+          </div>
+          <span class="vf-sr-only" role="status">{{ i18n.t('common.loading') }}</span>
+        } @else if (trees.error()) {
+          <div class="note" role="alert">
+            <p>{{ i18n.t('repo.unavailable.title') }}</p>
+            <button type="button" class="link-button" (click)="trees.reload()">
+              {{ i18n.t('common.retry') }}
+            </button>
+          </div>
+        }
+      } @else {
+        <ul class="repo-list" [attr.aria-label]="i18n.t('nav.repositories')">
+          @for (item of repos.list(); track item.id) {
+            <li>
+              <a class="repo-list__item" [routerLink]="link(item.id)">
+                <tui-icon icon="@tui.book-marked" />
+                <span>{{ item.name }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <footer class="sidebar__foot">
+      <vf-settings-menu />
+    </footer>
+  </aside>
+
+  <button
+    type="button"
+    class="backdrop"
+    tabindex="-1"
+    [attr.aria-label]="i18n.t('nav.close')"
+    (click)="ui.closeNav()"
+  ></button>
+
+  <div class="main">
+    <header class="topbar">
+      <button
+        type="button"
+        class="icon-button topbar__menu"
+        [attr.aria-label]="i18n.t('nav.open')"
+        aria-controls="sidebar"
+        [attr.aria-expanded]="ui.navOpen()"
+        (click)="ui.openNav()"
+      >
+        <tui-icon icon="@tui.panel-left" />
+      </button>
+
+      <nav class="crumbs" aria-label="breadcrumb">
+        @for (crumb of crumbs(); track $index; let last = $last) {
+          @if (crumb.link && !last) {
+            <a class="crumbs__item" [routerLink]="crumb.link">{{ crumb.label }}</a>
+          } @else {
+            <span
+              class="crumbs__item"
+              [class.crumbs__item--current]="last"
+              [attr.aria-current]="last ? 'page' : null"
+              >{{ crumb.label }}</span
+            >
+          }
+          @if (!last) {
+            <tui-icon class="crumbs__sep" icon="@tui.chevron-right" />
+          }
+        }
+      </nav>
+
+      <button type="button" class="search-button" (click)="ui.openSearch()">
+        <tui-icon icon="@tui.search" />
+        <span class="search-button__label">{{ i18n.t('search.open') }}</span>
+        <kbd class="search-button__kbd">⌘K</kbd>
+      </button>
+    </header>
+
+    <main id="content" class="content" tabindex="-1">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<vf-search-palette />
