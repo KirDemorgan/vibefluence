@@ -54,6 +54,11 @@ test-backend: ## Run backend tests with the race detector
 test-frontend: ## Run frontend tests with coverage
 	cd frontend && $(NPM) run test:ci
 
+.PHONY: e2e
+e2e: build ## Run browser tests against the built binary and the fake GitLab (needs Google Chrome)
+	cd backend && CGO_ENABLED=0 $(GO) build -o bin/fakegitlab ./cmd/fakegitlab
+	cd e2e && $(NPM) ci && $(NPM) test
+
 .PHONY: lint
 lint: lint-backend lint-frontend ## Run all linters
 

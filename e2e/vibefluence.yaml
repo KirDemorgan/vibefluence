@@ -1,0 +1,18 @@
+server:
+  dataDir: ./.data
+
+log:
+  level: warn
+  format: text
+
+gitlab:
+  baseUrl: http://127.0.0.1:18929
+
+repositories:
+  - id: platform
+    name: Platform
+    project: demo/platform
+    branch: master
+    paths:
+      - docs
+    autoMerge: true

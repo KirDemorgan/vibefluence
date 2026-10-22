@@ -11,3 +11,6 @@ backend/internal/web/dist/*
 frontend/coverage/
 
 deploy/config.yaml
+e2e/node_modules/
+e2e/.data/
+e2e/test-results/
