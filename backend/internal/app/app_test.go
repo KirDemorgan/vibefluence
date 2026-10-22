@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -314,5 +315,43 @@ func TestNewRequiresAWritableDataDirectory(t *testing.T) {
 	}
 	if _, err := New(&config.Config{Server: config.Server{DataDir: blocker}}, slog.New(slog.DiscardHandler)); err == nil {
 		t.Error("a data directory that is a file must be rejected")
+	}
+}
+
+func TestBotUserProbeWarnsOnceWhenTheTokenUserDiffers(t *testing.T) {
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&logs, nil))
+	user := gitlab.User{Username: "someone-else"}
+	probe := botUserProbe(func(context.Context) (gitlab.User, error) { return user, nil }, "vibefluence-bot", logger)
+	for range 3 {
+		if got, err := probe(context.Background()); err != nil || got != user {
+			t.Fatalf("probe = %v, %v", got, err)
+		}
+	}
+	if count := strings.Count(logs.String(), "different user"); count != 1 {
+		t.Errorf("warnings = %d, want 1\n%s", count, logs.String())
+	}
+	if !strings.Contains(logs.String(), "token_user=someone-else") {
+		t.Errorf("log lacks the token user: %s", logs.String())
+	}
+}
+
+func TestBotUserProbeStaysQuietForTheBotAndForErrors(t *testing.T) {
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&logs, nil))
+	matching := botUserProbe(func(context.Context) (gitlab.User, error) {
+		return gitlab.User{Username: "vibefluence-bot"}, nil
+	}, "vibefluence-bot", logger)
+	if _, err := matching(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	failing := botUserProbe(func(context.Context) (gitlab.User, error) {
+		return gitlab.User{}, errors.New("down")
+	}, "vibefluence-bot", logger)
+	if _, err := failing(context.Background()); err == nil {
+		t.Fatal("expected the probe error to pass through")
+	}
+	if logs.Len() != 0 {
+		t.Errorf("unexpected logs: %s", logs.String())
 	}
 }

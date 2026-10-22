@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"vibefluence/internal/api"
@@ -87,7 +88,7 @@ func New(cfg *config.Config, logger *slog.Logger, options ...Option) (*App, erro
 			return nil, fmt.Errorf("create GitLab client: %w", clientErr)
 		}
 		client = created
-		checks = append(checks, server.ReadinessCheck{Name: "gitlab", Check: cachedCheck(client.CurrentUser, time.Now)})
+		checks = append(checks, server.ReadinessCheck{Name: "gitlab", Check: cachedCheck(botUserProbe(client.CurrentUser, cfg.GitLab.BotUsername, logger), time.Now)})
 	}
 
 	manager := index.NewManager(index.Options{Repos: repos, Source: sourceOrNil(client), Logger: logger})
@@ -176,6 +177,20 @@ func cachedCheck(probe func(context.Context) (gitlab.User, error), now func() ti
 		_, lastErr = probe(ctx)
 		checkedAt, checked = now(), true
 		return lastErr
+	}
+}
+
+func botUserProbe(probe func(context.Context) (gitlab.User, error), botUsername string, logger *slog.Logger) func(context.Context) (gitlab.User, error) {
+	var warned atomic.Bool
+	return func(ctx context.Context) (gitlab.User, error) {
+		user, err := probe(ctx)
+		if err == nil && user.Username != botUsername && warned.CompareAndSwap(false, true) {
+			logger.WarnContext(ctx, "the GitLab token belongs to a different user than gitlab.botUsername; CI rules keyed on the bot user will not match",
+				slog.String("token_user", user.Username),
+				slog.String("bot_username", botUsername),
+			)
+		}
+		return user, err
 	}
 }
 
