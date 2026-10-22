@@ -14,6 +14,7 @@ import (
 	"vibefluence/internal/drafts"
 	"vibefluence/internal/gitlab"
 	"vibefluence/internal/index"
+	"vibefluence/internal/mcpserver"
 	"vibefluence/internal/portal"
 	"vibefluence/internal/publish"
 	"vibefluence/internal/server"
@@ -30,12 +31,14 @@ type App struct {
 	Logger *slog.Logger
 
 	handler http.Handler
+	mcp     http.Handler
 	checks  []server.ReadinessCheck
 }
 
 type settings struct {
 	publishGrace    time.Duration
 	publishInterval time.Duration
+	version         string
 }
 
 type Option func(*settings)
@@ -43,6 +46,12 @@ type Option func(*settings)
 func WithPublishTiming(grace, interval time.Duration) Option {
 	return func(s *settings) {
 		s.publishGrace, s.publishInterval = grace, interval
+	}
+}
+
+func WithVersion(version string) Option {
+	return func(s *settings) {
+		s.version = version
 	}
 }
 
@@ -106,7 +115,13 @@ func New(cfg *config.Config, logger *slog.Logger, options ...Option) (*App, erro
 		Invalidate:    manager.InvalidateProject,
 		WebhookSecret: cfg.GitLab.WebhookSecret,
 	})
-	return &App{Portal: service, Index: manager, Logger: logger, handler: apiHandler, checks: checks}, nil
+	var mcpHandler http.Handler
+	if cfg.MCP.IsEnabled() {
+		mcpHandler = mcpserver.Handler(mcpserver.New(mcpserver.Options{
+			Service: service, Version: tuning.version, AllowPublish: cfg.MCP.AllowPublish,
+		}))
+	}
+	return &App{Portal: service, Index: manager, Logger: logger, handler: apiHandler, mcp: mcpHandler, checks: checks}, nil
 }
 
 func sourceOrNil(client *gitlab.Client) index.GitLab {
@@ -129,6 +144,7 @@ func (a *App) Handler(assets fs.FS) http.Handler {
 		Assets: assets,
 		Checks: a.checks,
 		API:    a.handler,
+		MCP:    a.mcp,
 	})
 }
 

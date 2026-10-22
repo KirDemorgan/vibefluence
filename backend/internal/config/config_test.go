@@ -243,3 +243,22 @@ func TestValidationReportsAllProblems(t *testing.T) {
 		}
 	}
 }
+
+func TestMCPSettings(t *testing.T) {
+	cfg, err := Load("", env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.MCP.IsEnabled() || cfg.MCP.AllowPublish {
+		t.Errorf("defaults: enabled = %v, publish = %v", cfg.MCP.IsEnabled(), cfg.MCP.AllowPublish)
+	}
+
+	file := writeConfig(t, "mcp:\n  enabled: false\n  allowPublish: true\n")
+	cfg, err = Load(file, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.MCP.IsEnabled() || !cfg.MCP.AllowPublish {
+		t.Errorf("explicit: enabled = %v, publish = %v", cfg.MCP.IsEnabled(), cfg.MCP.AllowPublish)
+	}
+}

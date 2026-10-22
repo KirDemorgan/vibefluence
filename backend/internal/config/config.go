@@ -32,6 +32,16 @@ type Config struct {
 	Log          Log          `yaml:"log"`
 	GitLab       GitLab       `yaml:"gitlab"`
 	Repositories []Repository `yaml:"repositories"`
+	MCP          MCP          `yaml:"mcp"`
+}
+
+type MCP struct {
+	Enabled      *bool `yaml:"enabled"`
+	AllowPublish bool  `yaml:"allowPublish"`
+}
+
+func (m MCP) IsEnabled() bool {
+	return m.Enabled == nil || *m.Enabled
 }
 
 type Server struct {

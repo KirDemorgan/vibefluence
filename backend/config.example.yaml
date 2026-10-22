@@ -19,3 +19,7 @@ repositories:
     paths:
       - docs
     autoMerge: true
+
+mcp:
+  enabled: true
+  allowPublish: false

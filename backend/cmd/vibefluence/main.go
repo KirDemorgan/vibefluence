@@ -61,7 +61,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer, getenv fu
 		slog.Int("repositories", len(cfg.Repositories)),
 	)
 
-	application, err := app.New(cfg, logger)
+	application, err := app.New(cfg, logger, app.WithVersion(version))
 	if err != nil {
 		logger.Error("cannot build the application", slog.Any("error", err))
 		_ = listener.Close()
