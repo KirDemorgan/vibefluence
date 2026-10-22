@@ -1,14 +1,15 @@
 # Vibefluence
 
-Портал документации для репозиториев GitLab: показывает Markdown-файлы из папок `docs/` деревом, позволяет создавать и править документы из интерфейса и публиковать их в репозиторий через merge request. Для агентов предусмотрен MCP-сервер (в разработке).
+Портал документации для репозиториев GitLab: показывает Markdown-файлы из папок `docs/` деревом, позволяет создавать и править документы из интерфейса и публиковать их в репозиторий через merge request. Для агентов есть MCP-сервер на `/mcp`.
 
-Статус: **M0 (фундамент)**. Готовы монорепа, каркас бэкенда и фронтенда, фейковый GitLab, CI. Чтение и запись документов в разработке, план в [docs/02-backlog.md](docs/02-backlog.md).
+Статус: функционально готов (M0–M5). Чтение, поиск, редактор с автосохранением, публикация через MR, раздел черновиков и MCP работают на фейковом GitLab; реальный GitLab, Docker и `.gitlab-ci.yml` не проверялись, см. [руководство администратора](docs/05-admin.md). План и статусы: [docs/02-backlog.md](docs/02-backlog.md).
 
 ## Структура
 
 ```
-backend/    Go: HTTP-сервер, конфиг, фейковый GitLab для тестов
+backend/    Go: HTTP-сервер, клиент GitLab, публикация, MCP, фейковый GitLab для тестов
 frontend/   Angular 22 + Taiga UI 5
+e2e/        Playwright-тесты в Chrome против фейкового GitLab
 deploy/     compose-файл для запуска образа
 docs/       анализ, решения, бэклог, ADR
 ```
@@ -37,6 +38,7 @@ make dev
 | `make test` | все тесты (бэкенд с `-race`, фронтенд с покрытием) |
 | `make lint` | gofmt, go vet, golangci-lint, ESLint, Prettier |
 | `make vuln` | govulncheck и npm audit |
+| `make e2e` | браузерные тесты (нужен Google Chrome, собирает бинарники сам) |
 | `make build` | единый бинарник `backend/bin/vibefluence` с встроенным фронтендом |
 | `make help` | список всех целей |
 
@@ -57,11 +59,13 @@ VIBEFLUENCE_GITLAB_TOKEN=<token> ./backend/bin/vibefluence -config backend/confi
 
 Запуск в Docker: скопируйте `backend/config.example.yaml` в `deploy/config.yaml`, задайте `VIBEFLUENCE_GITLAB_TOKEN` и выполните `docker compose -f deploy/compose.yaml up --build` (образ в этой среде не собирался).
 
-Эндпоинты: `GET /healthz` (liveness), `GET /readyz` (readiness).
+Эндпоинты: `GET /healthz`, `GET /readyz`, `GET /metrics` (Prometheus), `/api/v1/...` (REST), `/mcp` (MCP, см. [docs/04-mcp.md](docs/04-mcp.md)).
 
 ## Документация
 
 - [Анализ конкурентов и реализуемости](docs/01-research.md)
 - [Бэклог](docs/02-backlog.md)
+- [MCP для агентов](docs/04-mcp.md)
+- [Руководство администратора](docs/05-admin.md)
 - [Решения и дизайн](docs/03-decisions.md)
 - [ADR](docs/adr/README.md)
