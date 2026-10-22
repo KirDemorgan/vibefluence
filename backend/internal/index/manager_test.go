@@ -713,3 +713,27 @@ func TestHiddenDocumentsAreNotFetchedRepeatedly(t *testing.T) {
 		t.Errorf("a hidden draft was downloaded again: %d -> %d", before, e.spy.blobs.Load())
 	}
 }
+
+func TestInvalidateProjectMatchesProjectAndBranch(t *testing.T) {
+	second := Repo{ID: "other", Project: "group/other", Branch: "master", Paths: []string{"docs"}}
+	e := newEnv(t, nil, baseRepo(), second)
+	e.put("docs/a.md", "# A")
+	mustGet(t, e.manager, "docs")
+
+	if n := e.manager.InvalidateProject("group/unknown", "master"); n != 0 {
+		t.Errorf("unknown project matched %d repositories", n)
+	}
+	if n := e.manager.InvalidateProject(project, "release"); n != 0 {
+		t.Errorf("a push to another branch must not invalidate: %d", n)
+	}
+	if n := e.manager.InvalidateProject(project, "master"); n != 1 {
+		t.Errorf("matched = %d", n)
+	}
+	e.put("docs/b.md", "# B")
+	if view := mustGet(t, e.manager, "docs"); len(view.Docs) != 2 {
+		t.Errorf("docs = %d, the invalidation must force a refresh", len(view.Docs))
+	}
+	if n := e.manager.InvalidateProject("group/other", "anything"); n != 1 {
+		t.Errorf("a repository without a snapshot is invalidated for any branch: %d", n)
+	}
+}

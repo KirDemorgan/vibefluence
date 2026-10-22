@@ -49,6 +49,8 @@ type GitLab struct {
 	BaseURL     string `yaml:"baseUrl"`
 	BotUsername string `yaml:"botUsername"`
 	Token       string `yaml:"-"`
+
+	WebhookSecret string `yaml:"-"`
 }
 
 type Repository struct {
@@ -103,6 +105,7 @@ func (c *Config) applyEnv(getenv func(string) string) {
 		{"VIBEFLUENCE_LOG_FORMAT", &c.Log.Format},
 		{"VIBEFLUENCE_GITLAB_BASE_URL", &c.GitLab.BaseURL},
 		{"VIBEFLUENCE_GITLAB_TOKEN", &c.GitLab.Token},
+		{"VIBEFLUENCE_GITLAB_WEBHOOK_SECRET", &c.GitLab.WebhookSecret},
 	}
 	for _, override := range overrides {
 		if value := strings.TrimSpace(getenv(override.name)); value != "" {

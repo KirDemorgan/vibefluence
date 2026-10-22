@@ -65,7 +65,7 @@ repositories:
   - id: web
     project: group/web
 `)
-	cfg, err := Load(file, env(map[string]string{"VIBEFLUENCE_GITLAB_TOKEN": "secret"}))
+	cfg, err := Load(file, env(map[string]string{"VIBEFLUENCE_GITLAB_TOKEN": "secret", "VIBEFLUENCE_GITLAB_WEBHOOK_SECRET": "hook"}))
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -77,6 +77,9 @@ repositories:
 	}
 	if cfg.GitLab.Token != "secret" {
 		t.Errorf("token not taken from env")
+	}
+	if cfg.GitLab.WebhookSecret != "hook" {
+		t.Errorf("webhook secret = %q", cfg.GitLab.WebhookSecret)
 	}
 	backend := cfg.Repositories[0]
 	if got := strings.Join(backend.Paths, ","); got != "docs,specs" {

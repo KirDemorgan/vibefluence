@@ -170,6 +170,25 @@ func (m *Manager) Invalidate(repoID string) {
 	}
 }
 
+func (m *Manager) InvalidateProject(project, branch string) int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	matched := 0
+	for _, repo := range m.repos {
+		if repo.Project != project {
+			continue
+		}
+		state := m.states[repo.ID]
+		if state.snapshot != nil && state.snapshot.Branch != branch {
+			continue
+		}
+		state.stale = true
+		state.failedAt = time.Time{}
+		matched++
+	}
+	return matched
+}
+
 func (m *Manager) fresh(repoID string) (View, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
