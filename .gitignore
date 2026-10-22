@@ -1,0 +1,13 @@
+.DS_Store
+*.log
+tmp/
+
+backend/bin/
+backend/data/
+backend/coverage.out
+backend/internal/web/dist/*
+!backend/internal/web/dist/.gitkeep
+
+frontend/coverage/
+
+deploy/config.yaml

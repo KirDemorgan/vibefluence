@@ -1,0 +1,23 @@
+services:
+  vibefluence:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["-config", "/etc/vibefluence/config.yaml"]
+    environment:
+      VIBEFLUENCE_ADDR: ":8080"
+      VIBEFLUENCE_GITLAB_TOKEN: ${VIBEFLUENCE_GITLAB_TOKEN:?set VIBEFLUENCE_GITLAB_TOKEN}
+    volumes:
+      - ./config.yaml:/etc/vibefluence/config.yaml:ro
+      - vibefluence-data:/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  vibefluence-data:
