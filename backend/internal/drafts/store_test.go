@@ -417,3 +417,30 @@ func TestValidationErrorMessage(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+func TestSaveKeepsTheMergeRequestOfAnExistingDraft(t *testing.T) {
+	store, _, _ := newStore(t)
+	saved, err := store.Save(sample("docs/plan.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SetMergeRequest("platform", saved.ID, "https://gl/mr/4", 4); err != nil {
+		t.Fatal(err)
+	}
+	edited := sample("docs/plan.md")
+	edited.Content = "# Plan\n\nmore"
+	if _, err := store.Save(edited); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := store.Get("platform", saved.ID)
+	if err != nil || loaded.MergeRequestIID != 4 || loaded.MergeRequestURL != "https://gl/mr/4" || loaded.Content != edited.Content {
+		t.Fatalf("loaded = %+v, err = %v", loaded, err)
+	}
+}
+
+func TestSetMergeRequestReportsMissingDrafts(t *testing.T) {
+	store, _, _ := newStore(t)
+	if err := store.SetMergeRequest("platform", ID("platform", "docs/none.md"), "u", 1); !errors.Is(err, ErrNotFound) {
+		t.Errorf("err = %v", err)
+	}
+}

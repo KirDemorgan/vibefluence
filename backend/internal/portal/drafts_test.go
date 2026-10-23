@@ -248,8 +248,8 @@ func TestAPendingPublishKeepsTheDraftAndRemembersTheMergeRequest(t *testing.T) {
 	}
 
 	edited, err := e.portal.SaveDraft(context.Background(), "docs", SaveDraftInput{Path: "docs/a.md", Content: "# A edited"})
-	if err != nil || edited.MergeRequestURL != "" {
-		t.Errorf("editing must clear the merge request note: %+v, err = %v", edited, err)
+	if err != nil || edited.MergeRequestURL != "https://gl/mr/9" {
+		t.Errorf("editing must keep the merge request link: %+v, err = %v", edited, err)
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 const (
 	BranchPrefix = "vibefluence/"
 
+	operationBudget       = 2 * time.Minute
 	defaultPipelineGrace  = 2 * time.Second
 	defaultStatusPolls    = 6
 	defaultStatusInterval = 500 * time.Millisecond
@@ -173,6 +174,16 @@ type Request struct {
 	Author     string
 	AutoMerge  bool
 	Force      bool
+
+	PreviousMergeRequestIID int
+}
+
+type OpenMergeRequestError struct {
+	URL string
+}
+
+func (e *OpenMergeRequestError) Error() string {
+	return "a merge request for this document is still open: " + e.URL
 }
 
 type Result struct {
@@ -198,6 +209,10 @@ func (p *Publisher) Publish(ctx context.Context, request Request) (Result, error
 	}
 	defer release()
 
+	if err := p.rejectOpenMergeRequest(ctx, request); err != nil {
+		return Result{}, err
+	}
+
 	parsed := docs.Parse([]byte(content), request.Path)
 	existing, err := p.currentFile(ctx, request)
 	if err != nil {
@@ -206,6 +221,12 @@ func (p *Publisher) Publish(ctx context.Context, request Request) (Result, error
 	if existing != nil && string(existing.Content) == content {
 		return Result{}, ErrNoChanges
 	}
+
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), operationBudget)
+	defer cancel()
 
 	created := existing == nil
 	source := p.branchName(parsed.Title, request.Path)
@@ -235,6 +256,23 @@ func (p *Publisher) Publish(ctx context.Context, request Request) (Result, error
 		return result, nil
 	}
 	return p.merge(ctx, request, mr, title, result)
+}
+
+func (p *Publisher) rejectOpenMergeRequest(ctx context.Context, request Request) error {
+	if request.PreviousMergeRequestIID == 0 {
+		return nil
+	}
+	mr, err := p.client.GetMergeRequest(ctx, request.Project, request.PreviousMergeRequestIID)
+	if errors.Is(err, gitlab.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("check the previous merge request: %w", err)
+	}
+	if mr.State == "opened" {
+		return &OpenMergeRequestError{URL: mr.WebURL}
+	}
+	return nil
 }
 
 func validate(request Request) (string, error) {

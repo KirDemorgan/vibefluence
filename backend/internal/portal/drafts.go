@@ -33,6 +33,7 @@ type DraftStore interface {
 	Get(repo, id string) (drafts.Draft, error)
 	List(repo string) ([]drafts.Draft, error)
 	Delete(repo, id string) error
+	SetMergeRequest(repo, id, url string, iid int) error
 }
 
 type Publisher interface {
@@ -207,7 +208,7 @@ func (p *Portal) PublishDraft(ctx context.Context, repoID, id string, input Publ
 
 	result, err := p.publisher.Publish(ctx, publish.Request{
 		Project: repo.Project, Branch: view.Branch, Roots: repo.Paths, Path: draft.Path, Content: draft.Content,
-		BaseBlobID: draft.BaseBlobID, Author: author, AutoMerge: p.autoMerge(repoID), Force: input.Force,
+		BaseBlobID: draft.BaseBlobID, Author: author, AutoMerge: p.autoMerge(repoID), Force: input.Force, PreviousMergeRequestIID: draft.MergeRequestIID,
 	})
 	if err != nil {
 		return PublishOutcome{}, p.publishError(err)
@@ -234,9 +235,7 @@ func (p *Portal) removeDraft(ctx context.Context, repoID, id string) bool {
 }
 
 func (p *Portal) rememberMergeRequest(ctx context.Context, draft drafts.Draft, result publish.Result) {
-	draft.MergeRequestURL = result.MergeRequestURL
-	draft.MergeRequestIID = result.MergeRequestIID
-	if _, err := p.drafts.Save(draft); err != nil {
+	if err := p.drafts.SetMergeRequest(draft.Repo, draft.ID, result.MergeRequestURL, result.MergeRequestIID); err != nil {
 		p.logger.WarnContext(ctx, "could not remember the merge request of a draft", "repo", draft.Repo, "error", err)
 	}
 }
@@ -244,7 +243,10 @@ func (p *Portal) rememberMergeRequest(ctx context.Context, draft drafts.Draft, r
 func (p *Portal) publishError(err error) error {
 	var conflict *publish.ConflictError
 	var validation *publish.ValidationError
+	var open *publish.OpenMergeRequestError
 	switch {
+	case errors.As(err, &open):
+		return invalid("%s. Merge or close it before publishing again", open.Error())
 	case errors.As(err, &conflict):
 		return &ConflictError{Exists: conflict.Exists, CurrentBlobID: conflict.CurrentBlobID, Message: conflict.Error()}
 	case errors.As(err, &validation):

@@ -665,7 +665,7 @@ func TestOnlyOnePublishPerDocumentRunsAtATime(t *testing.T) {
 	}
 }
 
-func TestACancelledContextAbortsBeforeMerging(t *testing.T) {
+func TestAClientThatDisconnectsDoesNotAbortAPublishUnderWay(t *testing.T) {
 	e := newEnv(t, fakegitlab.ProjectOptions{})
 	ctx, cancel := context.WithCancel(context.Background())
 	e.publisher = New(Options{
@@ -676,12 +676,25 @@ func TestACancelledContextAbortsBeforeMerging(t *testing.T) {
 			return ctx.Err()
 		},
 	})
+	result, err := e.publisher.Publish(ctx, e.request("docs/a.md", "# A"))
+	if err != nil || result.Outcome != OutcomeMerged {
+		t.Fatalf("result = %+v, err = %v", result, err)
+	}
+	if _, ok := e.fake.File(project, "master", "docs/a.md"); !ok {
+		t.Error("the publish must finish after the client left")
+	}
+}
+
+func TestACancelledContextAbortsBeforeAnythingIsWritten(t *testing.T) {
+	e := newEnv(t, fakegitlab.ProjectOptions{})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 	_, err := e.publisher.Publish(ctx, e.request("docs/a.md", "# A"))
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("err = %v", err)
 	}
 	if _, ok := e.fake.File(project, "master", "docs/a.md"); ok {
-		t.Error("nothing may be merged after cancellation")
+		t.Error("nothing may be written after cancellation")
 	}
 }
 
@@ -747,5 +760,28 @@ func TestContentThatIsAlreadyPublishedIsLeftUntouched(t *testing.T) {
 		if got, _ := e.fake.File(project, "master", "docs/a.md"); got != content {
 			t.Errorf("content changed:\n got %q\nwant %q", got, content)
 		}
+	}
+}
+
+func TestAnOpenMergeRequestBlocksAnotherPublish(t *testing.T) {
+	e := newEnv(t, fakegitlab.ProjectOptions{})
+	first := e.request("docs/a.md", "# A")
+	first.AutoMerge = false
+	pending, err := e.publisher.Publish(context.Background(), first)
+	if err != nil || pending.Outcome != OutcomePending {
+		t.Fatalf("pending = %+v, err = %v", pending, err)
+	}
+
+	again := e.request("docs/a.md", "# A edited")
+	again.PreviousMergeRequestIID = pending.MergeRequestIID
+	_, err = e.publisher.Publish(context.Background(), again)
+	var open *OpenMergeRequestError
+	if !errors.As(err, &open) || open.URL != pending.MergeRequestURL {
+		t.Fatalf("err = %v", err)
+	}
+
+	again.PreviousMergeRequestIID = 9999
+	if _, err := e.publisher.Publish(context.Background(), again); err != nil {
+		t.Errorf("an unknown previous merge request must not block: %v", err)
 	}
 }

@@ -160,6 +160,10 @@ func (s *Store) Save(draft Draft) (Draft, error) {
 	draft.CreatedAt = now
 	if existing, err := s.read(target); err == nil {
 		draft.CreatedAt = existing.CreatedAt
+		if draft.MergeRequestIID == 0 {
+			draft.MergeRequestURL = existing.MergeRequestURL
+			draft.MergeRequestIID = existing.MergeRequestIID
+		}
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return Draft{}, err
 	} else if count, err := s.count(filepath.Dir(target)); err != nil {
@@ -172,6 +176,25 @@ func (s *Store) Save(draft Draft) (Draft, error) {
 		return Draft{}, err
 	}
 	return draft, nil
+}
+
+func (s *Store) SetMergeRequest(repo, id, url string, iid int) error {
+	target, err := s.file(repo, id)
+	if err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	draft, err := s.read(target)
+	if errors.Is(err, fs.ErrNotExist) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	draft.MergeRequestURL = url
+	draft.MergeRequestIID = iid
+	return writeAtomically(target, draft)
 }
 
 func (s *Store) Get(repo, id string) (Draft, error) {
