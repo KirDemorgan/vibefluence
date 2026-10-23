@@ -55,7 +55,7 @@ go install golang.org/x/vuln/cmd/govulncheck@latest
 VIBEFLUENCE_GITLAB_TOKEN=<token> ./backend/bin/vibefluence -config backend/config.example.yaml
 ```
 
-Конфигурация: YAML ([пример](backend/config.example.yaml)) плюс переменные окружения `VIBEFLUENCE_ADDR`, `VIBEFLUENCE_DATA_DIR`, `VIBEFLUENCE_LOG_LEVEL`, `VIBEFLUENCE_LOG_FORMAT`, `VIBEFLUENCE_GITLAB_BASE_URL`, `VIBEFLUENCE_GITLAB_TOKEN`. Токен задаётся только через окружение. Сервис не имеет аутентификации и рассчитан на внутренний контур.
+Конфигурация: YAML ([пример](backend/config.example.yaml)) плюс переменные окружения `VIBEFLUENCE_ADDR`, `VIBEFLUENCE_DATA_DIR`, `VIBEFLUENCE_LOG_LEVEL`, `VIBEFLUENCE_LOG_FORMAT`, `VIBEFLUENCE_GITLAB_BASE_URL`, `VIBEFLUENCE_GITLAB_TOKEN`. Токен задаётся только через окружение. Без токена сервис работает только на чтение (подходит для демо с публичными проектами). Сервис не имеет аутентификации и рассчитан на внутренний контур.
 
 Запуск в Docker: скопируйте `backend/config.example.yaml` в `deploy/config.yaml`, задайте `VIBEFLUENCE_GITLAB_TOKEN` и выполните `docker compose -f deploy/compose.yaml up --build` (образ в этой среде не собирался).
 
