@@ -18,6 +18,7 @@ export const REPO: Repo = {
   branch: 'master',
   paths: ['docs'],
   autoMerge: true,
+  readOnly: false,
   docCount: 3,
   hiddenCount: 1,
   stale: false,

@@ -369,3 +369,27 @@ func TestFirstRootFallback(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+func TestAReadOnlyPortalRefusesEveryWrite(t *testing.T) {
+	e := newWriteEnv(t, true)
+	readOnly := New(Options{Index: e.portal.index, Files: e.portal.files, Drafts: e.store, Publisher: e.publisher, ReadOnly: true})
+	ctx := context.Background()
+
+	if _, err := readOnly.SaveDraft(ctx, "docs", SaveDraftInput{Path: "docs/a.md", Content: "# A"}); !errors.Is(err, ErrReadOnly) {
+		t.Errorf("save err = %v", err)
+	}
+	if err := readOnly.DeleteDraft(ctx, "docs", "0123456789abcdef"); !errors.Is(err, ErrReadOnly) {
+		t.Errorf("delete err = %v", err)
+	}
+	if _, err := readOnly.PublishDraft(ctx, "docs", "0123456789abcdef", PublishInput{}); !errors.Is(err, ErrReadOnly) {
+		t.Errorf("publish err = %v", err)
+	}
+	if len(e.publisher.requests) != 0 {
+		t.Error("nothing may reach the publisher")
+	}
+	for _, summary := range readOnly.Repos(ctx) {
+		if !summary.ReadOnly {
+			t.Errorf("%s must be reported as read-only", summary.ID)
+		}
+	}
+}

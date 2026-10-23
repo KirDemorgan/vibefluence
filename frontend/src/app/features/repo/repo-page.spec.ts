@@ -81,6 +81,12 @@ describe('RepoPage', () => {
     expect(document.title).toBe('Platform · Vibefluence');
   });
 
+  it('offers no way to write when the server is read-only', async () => {
+    const element = await create({ repos: [{ ...REPO, readOnly: true }] });
+    expect(element.querySelector('.head__actions a[href="/new/platform"]')).toBeNull();
+    expect(element.querySelector('.head__actions a[target="_blank"]')).not.toBeNull();
+  });
+
   it('groups documents by folder', async () => {
     const element = await create();
     expect(

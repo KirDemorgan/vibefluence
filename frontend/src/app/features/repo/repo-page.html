@@ -12,14 +12,16 @@
       }
     </div>
     <div class="head__actions">
-      <a
-        tuiButton
-        appearance="primary"
-        size="m"
-        iconStart="@tui.plus"
-        [routerLink]="newDocLink()"
-        >{{ i18n.t('repo.newDoc') }}</a
-      >
+      @if (canWrite()) {
+        <a
+          tuiButton
+          appearance="primary"
+          size="m"
+          iconStart="@tui.plus"
+          [routerLink]="newDocLink()"
+          >{{ i18n.t('repo.newDoc') }}</a
+        >
+      }
       @if (info()?.webUrl; as url) {
         <a
           tuiButton

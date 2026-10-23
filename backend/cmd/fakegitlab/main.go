@@ -25,6 +25,7 @@ func run(ctx context.Context, args []string, stderr io.Writer) int {
 	flags := flag.NewFlagSet("fakegitlab", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	addr := flags.String("addr", "127.0.0.1:8929", "listen address")
+	public := flags.Bool("public", false, "let anonymous clients read, like a public GitLab project")
 	token := flags.String("token", "dev-token", "token accepted in the PRIVATE-TOKEN header")
 	if err := flags.Parse(args); err != nil {
 		return 2
@@ -32,6 +33,7 @@ func run(ctx context.Context, args []string, stderr io.Writer) int {
 
 	logger := slog.New(slog.NewTextHandler(stderr, nil))
 	fake := fakegitlab.New(*token)
+	fake.SetPublicReads(*public)
 	fakegitlab.SeedDemo(fake)
 
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", *addr)

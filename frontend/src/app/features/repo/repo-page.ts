@@ -27,6 +27,7 @@ export class RepoPage {
 
   protected readonly refreshing = signal(false);
   protected readonly info = computed(() => this.repos.byId(this.repo()));
+  protected readonly canWrite = computed(() => this.info()?.readOnly !== true);
   protected readonly tree = computed(() => {
     const tree = this.trees.tree();
     return tree?.repo === this.repo() ? tree : undefined;

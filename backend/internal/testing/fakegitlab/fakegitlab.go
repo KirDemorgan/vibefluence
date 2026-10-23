@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"sync"
+	"sync/atomic"
 )
 
 const defaultBotUsername = "vibefluence-bot"
@@ -36,15 +37,16 @@ type PipelineInfo struct {
 }
 
 type Server struct {
-	mu         sync.Mutex
-	token      string
-	botName    string
-	nextID     int
-	projects   map[string]*project
-	failNext   int
-	failStatus int
-	requests   int
-	mux        *http.ServeMux
+	mu          sync.Mutex
+	token       string
+	publicReads atomic.Bool
+	botName     string
+	nextID      int
+	projects    map[string]*project
+	failNext    int
+	failStatus  int
+	requests    int
+	mux         *http.ServeMux
 }
 
 func New(token string) *Server {
@@ -80,10 +82,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) authorized(r *http.Request) bool {
+	if s.publicReads.Load() && (r.Method == http.MethodGet || r.Method == http.MethodHead) && r.URL.Path != "/api/v4/user" {
+		return true
+	}
 	if r.Header.Get("PRIVATE-TOKEN") == s.token {
 		return s.token != ""
 	}
 	return s.token != "" && r.Header.Get("Authorization") == "Bearer "+s.token
+}
+
+func (s *Server) SetPublicReads(enabled bool) {
+	s.publicReads.Store(enabled)
 }
 
 func (s *Server) SetBotUsername(name string) {

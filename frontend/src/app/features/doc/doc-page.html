@@ -22,7 +22,7 @@
         </div>
       }
 
-      @if (draft()) {
+      @if (draft() && canWrite()) {
         <div class="banner banner--info" role="note">
           <tui-icon icon="@tui.file-pen" />
           <span>{{ i18n.t('doc.draftExists') }}</span>
@@ -40,14 +40,16 @@
           <span class="meta__path">{{ d.path }}</span>
         </div>
         <div class="meta__actions">
-          <a
-            tuiButton
-            appearance="secondary"
-            size="s"
-            iconStart="@tui.pencil"
-            [routerLink]="editTarget()"
-            >{{ i18n.t('doc.edit') }}</a
-          >
+          @if (canWrite()) {
+            <a
+              tuiButton
+              appearance="secondary"
+              size="s"
+              iconStart="@tui.pencil"
+              [routerLink]="editTarget()"
+              >{{ i18n.t('doc.edit') }}</a
+            >
+          }
           @if (d.webUrl) {
             <a class="meta__link" [href]="d.webUrl" target="_blank" rel="noopener noreferrer">
               {{ i18n.t('repo.openGitlab') }}

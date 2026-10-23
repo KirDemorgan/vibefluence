@@ -60,7 +60,6 @@ func TestNewValidatesOptions(t *testing.T) {
 		{"empty base url", Options{Token: "t"}},
 		{"non http scheme", Options{BaseURL: "ftp://gitlab.example.com", Token: "t"}},
 		{"missing host", Options{BaseURL: "https://", Token: "t"}},
-		{"missing token", Options{BaseURL: "https://gitlab.example.com"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -513,5 +512,24 @@ func TestBranch(t *testing.T) {
 	}
 	if _, err := f.client.Branch(context.Background(), project, "release/1"); !errors.Is(err, ErrNotFound) {
 		t.Errorf("missing branch err = %v", err)
+	}
+}
+
+func TestRequestsWithoutATokenCarryNoTokenHeader(t *testing.T) {
+	var got http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Clone()
+		_, _ = w.Write([]byte(`{"id":1,"path_with_namespace":"g/a","default_branch":"master"}`))
+	}))
+	defer server.Close()
+	client, err := New(Options{BaseURL: server.URL, MaxRetries: -1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Project(context.Background(), "g/a"); err != nil {
+		t.Fatal(err)
+	}
+	if _, present := got["Private-Token"]; present {
+		t.Errorf("unexpected token header: %v", got)
 	}
 }

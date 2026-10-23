@@ -78,9 +78,6 @@ func New(opts Options) (*Client, error) {
 	if err != nil || (base.Scheme != "http" && base.Scheme != "https") || base.Host == "" {
 		return nil, fmt.Errorf("gitlab: base URL %q must be an http(s) URL", opts.BaseURL)
 	}
-	if opts.Token == "" {
-		return nil, errors.New("gitlab: token is required")
-	}
 	client := &Client{
 		base:       base,
 		token:      opts.Token,
@@ -232,7 +229,9 @@ func (c *Client) attempt(ctx context.Context, method, path string, query url.Val
 	if err != nil {
 		return nil, err
 	}
-	request.Header.Set("PRIVATE-TOKEN", c.token)
+	if c.token != "" {
+		request.Header.Set("PRIVATE-TOKEN", c.token)
+	}
 	request.Header.Set("Accept", "application/json")
 	request.Header.Set("User-Agent", userAgent)
 	if body != nil {

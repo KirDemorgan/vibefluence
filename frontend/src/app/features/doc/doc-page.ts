@@ -76,6 +76,7 @@ export class DocPage {
   });
   protected readonly notFound = computed(() => this.error()?.isNotFound === true);
   protected readonly loading = computed(() => this.resource.isLoading() && !this.doc());
+  protected readonly canWrite = computed(() => this.repos.byId(this.repo())?.readOnly !== true);
   protected readonly repoName = computed(() => this.repos.byId(this.repo())?.name ?? this.repo());
   protected readonly draft = computed(() => {
     const doc = this.doc();

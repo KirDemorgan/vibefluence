@@ -76,6 +76,7 @@ type repoDTO struct {
 	Branch    string   `json:"branch"`
 	Paths     []string `json:"paths"`
 	AutoMerge bool     `json:"autoMerge"`
+	ReadOnly  bool     `json:"readOnly"`
 	DocCount  int      `json:"docCount"`
 	Hidden    int      `json:"hiddenCount"`
 	Stale     bool     `json:"stale"`
@@ -86,7 +87,7 @@ type repoDTO struct {
 func toRepoDTO(summary portal.RepoSummary) repoDTO {
 	return repoDTO{
 		ID: summary.ID, Name: summary.Name, Project: summary.Project, Branch: summary.Branch, Paths: summary.Paths,
-		AutoMerge: summary.AutoMerge, DocCount: summary.DocCount, Hidden: summary.Hidden, Stale: summary.Stale,
+		AutoMerge: summary.AutoMerge, ReadOnly: summary.ReadOnly, DocCount: summary.DocCount, Hidden: summary.Hidden, Stale: summary.Stale,
 		Available: summary.Available, WebURL: summary.WebURL,
 	}
 }

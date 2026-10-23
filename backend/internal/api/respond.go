@@ -43,6 +43,8 @@ func (h *handler) fail(w http.ResponseWriter, r *http.Request, err error) {
 		writeJSON(w, http.StatusConflict, conflictBody{
 			Error: "conflict", Message: conflict.Message, Exists: conflict.Exists, CurrentBlobID: conflict.CurrentBlobID,
 		})
+	case errors.Is(err, portal.ErrReadOnly):
+		writeError(w, http.StatusForbidden, "read_only", "this server runs without a GitLab token and is read-only")
 	case errors.Is(err, portal.ErrBusy):
 		writeError(w, http.StatusConflict, "busy", "this document is being published right now, try again in a moment")
 	case errors.As(err, &validation):

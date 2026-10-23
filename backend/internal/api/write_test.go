@@ -248,6 +248,12 @@ func TestConflictsAndBusyDocumentsAreReportedWith409(t *testing.T) {
 	if recorder.Code != http.StatusConflict || decode(t, recorder)["error"] != "busy" {
 		t.Errorf("busy: status %d body %s", recorder.Code, recorder.Body.String())
 	}
+
+	w.err = fmt.Errorf("%w: no token", portal.ErrReadOnly)
+	recorder = jsonCall(handler, http.MethodPost, "/api/v1/repos/platform/drafts/0123456789abcdef/publish", `{}`)
+	if recorder.Code != http.StatusForbidden || decode(t, recorder)["error"] != "read_only" {
+		t.Errorf("read-only: status %d body %s", recorder.Code, recorder.Body.String())
+	}
 }
 
 func TestWriteErrorMapping(t *testing.T) {

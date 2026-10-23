@@ -72,6 +72,10 @@ type GitLab struct {
 	WebhookSecret string `yaml:"-"`
 }
 
+func (g GitLab) ReadOnly() bool {
+	return g.Token == ""
+}
+
 type Repository struct {
 	ID        string   `yaml:"id"`
 	Name      string   `yaml:"name"`
@@ -236,9 +240,6 @@ func (c *Config) validateGitLab() []error {
 	parsed, err := url.Parse(c.GitLab.BaseURL)
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
 		errs = append(errs, fmt.Errorf("gitlab.baseUrl %q must be an http(s) URL", c.GitLab.BaseURL))
-	}
-	if c.GitLab.Token == "" {
-		errs = append(errs, errors.New("VIBEFLUENCE_GITLAB_TOKEN must be set when repositories are configured"))
 	}
 	return errs
 }

@@ -7,6 +7,7 @@ export interface Repo {
   branch: string;
   paths: string[];
   autoMerge: boolean;
+  readOnly: boolean;
   docCount: number;
   hiddenCount: number;
   stale: boolean;

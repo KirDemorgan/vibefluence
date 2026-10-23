@@ -46,6 +46,9 @@ export class Shell {
 
   protected readonly repoId = this.route.repo;
   protected readonly activePath = this.route.docPath;
+  protected readonly canWrite = computed(
+    () => this.repos.list().length === 0 || this.repos.list().some((repo) => !repo.readOnly),
+  );
   protected readonly repo = computed(() => this.repos.byId(this.repoId()));
 
   protected readonly crumbs = computed<Crumb[]>(() => {

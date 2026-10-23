@@ -20,13 +20,15 @@
 
     <vf-repo-switcher />
 
-    <a class="drafts-link" routerLink="/drafts" routerLinkActive="drafts-link--active">
-      <tui-icon icon="@tui.file-pen" />
-      <span>{{ i18n.t('nav.drafts') }}</span>
-      @if (drafts.count() > 0) {
-        <span class="drafts-link__count">{{ drafts.count() }}</span>
-      }
-    </a>
+    @if (canWrite()) {
+      <a class="drafts-link" routerLink="/drafts" routerLinkActive="drafts-link--active">
+        <tui-icon icon="@tui.file-pen" />
+        <span>{{ i18n.t('nav.drafts') }}</span>
+        @if (drafts.count() > 0) {
+          <span class="drafts-link__count">{{ drafts.count() }}</span>
+        }
+      </a>
+    }
 
     <div class="sidebar__body">
       @if (repoId(); as id) {

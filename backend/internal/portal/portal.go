@@ -21,6 +21,7 @@ import (
 
 var (
 	ErrNotFound = errors.New("not found")
+	ErrReadOnly = errors.New("read-only")
 	ErrInvalid  = errors.New("invalid request")
 )
 
@@ -53,6 +54,7 @@ type Options struct {
 	ImageCache *ImageCache
 	Drafts     DraftStore
 	Publisher  Publisher
+	ReadOnly   bool
 }
 
 type Portal struct {
@@ -65,6 +67,7 @@ type Portal struct {
 	images    *ImageCache
 	drafts    DraftStore
 	publisher Publisher
+	readOnly  bool
 }
 
 func New(opts Options) *Portal {
@@ -78,6 +81,7 @@ func New(opts Options) *Portal {
 		images:    opts.ImageCache,
 		drafts:    opts.Drafts,
 		publisher: opts.Publisher,
+		readOnly:  opts.ReadOnly,
 	}
 	if portal.logger == nil {
 		portal.logger = slog.New(slog.DiscardHandler)
@@ -101,6 +105,7 @@ type RepoSummary struct {
 	Branch    string
 	Paths     []string
 	AutoMerge bool
+	ReadOnly  bool
 	DocCount  int
 	Hidden    int
 	Stale     bool
@@ -126,7 +131,7 @@ func (p *Portal) Repos(ctx context.Context) []RepoSummary {
 func (p *Portal) summarize(ctx context.Context, repo index.Repo) RepoSummary {
 	summary := RepoSummary{
 		ID: repo.ID, Name: repo.Name, Project: repo.Project, Branch: repo.Branch, Paths: repo.Paths,
-		AutoMerge: p.autoMerge(repo.ID), WebURL: p.projectURL(repo),
+		AutoMerge: p.autoMerge(repo.ID), ReadOnly: p.readOnly, WebURL: p.projectURL(repo),
 	}
 	view, err := p.index.Get(ctx, repo.ID)
 	if err != nil {

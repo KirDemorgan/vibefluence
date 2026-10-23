@@ -355,3 +355,35 @@ func TestBotUserProbeStaysQuietForTheBotAndForErrors(t *testing.T) {
 		t.Errorf("unexpected logs: %s", logs.String())
 	}
 }
+
+func TestWithoutATokenTheAppReadsPublicProjectsAndRefusesWrites(t *testing.T) {
+	s := newStack(t, func(cfg *config.Config) { cfg.GitLab.Token = "" })
+	s.fake.SetPublicReads(true)
+	s.fake.PutFile(project, "master", "docs/README.md", "# Welcome\n")
+
+	status, _, body := s.do(t, http.MethodGet, "/api/v1/repos")
+	if status != http.StatusOK || !strings.Contains(string(body), `"readOnly":true`) || !strings.Contains(string(body), `"docCount":1`) {
+		t.Fatalf("repos: status %d body %s", status, body)
+	}
+	if status, _, body := s.do(t, http.MethodGet, "/api/v1/repos/docs/doc?path=docs/README.md"); status != http.StatusOK || !strings.Contains(string(body), "Welcome") {
+		t.Errorf("doc: status %d body %s", status, body)
+	}
+
+	request, err := http.NewRequest(http.MethodPut, s.web.URL+"/api/v1/repos/docs/drafts", strings.NewReader(`{"path":"docs/new.md","content":"# New"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = response.Body.Close() }()
+	if response.StatusCode != http.StatusForbidden {
+		t.Errorf("save draft status = %d, want 403", response.StatusCode)
+	}
+
+	if status, _, _ := s.do(t, http.MethodGet, "/readyz"); status != http.StatusOK {
+		t.Errorf("readyz = %d: a read-only server has no token to check", status)
+	}
+}

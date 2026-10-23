@@ -159,11 +159,6 @@ func TestValidation(t *testing.T) {
 			wantErr: "shutdownTimeout",
 		},
 		{
-			name:    "repositories need token",
-			yaml:    "gitlab:\n  baseUrl: https://g.example.com\nrepositories:\n  - id: a\n    project: g/a\n",
-			wantErr: "VIBEFLUENCE_GITLAB_TOKEN",
-		},
-		{
 			name:    "repositories need base url",
 			yaml:    "repositories:\n  - id: a\n    project: g/a\n",
 			env:     map[string]string{"VIBEFLUENCE_GITLAB_TOKEN": "t"},
@@ -272,5 +267,20 @@ func TestWriteRateLimitDefaultsAndOverrides(t *testing.T) {
 	cfg.Server.WriteRateLimit = &disabled
 	if got := cfg.Server.WriteRatePerMinute(); got != -1 {
 		t.Errorf("override = %d", got)
+	}
+}
+
+func TestWithoutATokenTheServerIsReadOnly(t *testing.T) {
+	yaml := "gitlab:\n  baseUrl: https://g.example.com\nrepositories:\n  - id: a\n    project: g/a\n"
+	cfg, err := Load(writeConfig(t, yaml), env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.GitLab.ReadOnly() {
+		t.Error("an absent token must mean read-only")
+	}
+	cfg, err = Load(writeConfig(t, yaml), env(map[string]string{"VIBEFLUENCE_GITLAB_TOKEN": "t"}))
+	if err != nil || cfg.GitLab.ReadOnly() {
+		t.Errorf("a configured token must allow writing: %v", err)
 	}
 }

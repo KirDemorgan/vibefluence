@@ -80,6 +80,7 @@ func New(cfg *config.Config, logger *slog.Logger, options ...Option) (*App, erro
 		repoSettings[repo.ID] = portal.RepoSettings{AutoMerge: repo.AutoMergeEnabled()}
 	}
 
+	readOnly := cfg.GitLab.ReadOnly()
 	var client *gitlab.Client
 	var checks []server.ReadinessCheck
 	if len(repos) > 0 {
@@ -88,12 +89,16 @@ func New(cfg *config.Config, logger *slog.Logger, options ...Option) (*App, erro
 			return nil, fmt.Errorf("create GitLab client: %w", clientErr)
 		}
 		client = created
-		checks = append(checks, server.ReadinessCheck{Name: "gitlab", Check: cachedCheck(botUserProbe(client.CurrentUser, cfg.GitLab.BotUsername, logger), time.Now)})
+		if readOnly {
+			logger.Info("no GitLab token configured, running read-only; only public projects are reachable")
+		} else {
+			checks = append(checks, server.ReadinessCheck{Name: "gitlab", Check: cachedCheck(botUserProbe(client.CurrentUser, cfg.GitLab.BotUsername, logger), time.Now)})
+		}
 	}
 
 	manager := index.NewManager(index.Options{Repos: repos, Source: sourceOrNil(client), Logger: logger})
 	var publisher portal.Publisher
-	if client != nil {
+	if client != nil && !readOnly {
 		publisher = publish.New(publish.Options{
 			Client:         client,
 			Invalidate:     manager.InvalidateProject,
@@ -110,6 +115,7 @@ func New(cfg *config.Config, logger *slog.Logger, options ...Option) (*App, erro
 		Logger:    logger,
 		Drafts:    store,
 		Publisher: publisher,
+		ReadOnly:  readOnly,
 	})
 	apiHandler := api.New(api.Options{
 		Service:       service,

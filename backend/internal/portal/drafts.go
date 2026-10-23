@@ -67,6 +67,13 @@ func summarize(draft drafts.Draft) DraftSummary {
 	}
 }
 
+func (p *Portal) requireWritable() error {
+	if p.readOnly {
+		return fmt.Errorf("%w: this server has no GitLab token", ErrReadOnly)
+	}
+	return nil
+}
+
 func (p *Portal) requireDrafts() error {
 	if p.drafts == nil {
 		return invalid("drafts are not available on this server")
@@ -137,6 +144,9 @@ type SaveDraftInput struct {
 }
 
 func (p *Portal) SaveDraft(_ context.Context, repoID string, input SaveDraftInput) (DraftView, error) {
+	if err := p.requireWritable(); err != nil {
+		return DraftView{}, err
+	}
 	repo, ok := p.index.Repo(repoID)
 	if !ok {
 		return DraftView{}, fmt.Errorf("%w: repository %s", ErrNotFound, repoID)
@@ -157,6 +167,9 @@ func (p *Portal) SaveDraft(_ context.Context, repoID string, input SaveDraftInpu
 }
 
 func (p *Portal) DeleteDraft(_ context.Context, repoID, id string) error {
+	if err := p.requireWritable(); err != nil {
+		return err
+	}
 	if _, ok := p.index.Repo(repoID); !ok {
 		return fmt.Errorf("%w: repository %s", ErrNotFound, repoID)
 	}
@@ -183,6 +196,9 @@ type PublishOutcome struct {
 }
 
 func (p *Portal) PublishDraft(ctx context.Context, repoID, id string, input PublishInput) (PublishOutcome, error) {
+	if err := p.requireWritable(); err != nil {
+		return PublishOutcome{}, err
+	}
 	repo, ok := p.index.Repo(repoID)
 	if !ok {
 		return PublishOutcome{}, fmt.Errorf("%w: repository %s", ErrNotFound, repoID)
