@@ -591,6 +591,21 @@ describe('EditorPage', () => {
       expect(query(element, 'dialog').textContent).toContain('You will merge it in GitLab');
     });
 
+    it('locks the title and the text while the document is being published', async () => {
+      const element = await openReady();
+      openDialog(element);
+      submit(element);
+      await answerSave();
+      fixture.detectChanges();
+      expect(query<HTMLTextAreaElement>(element, 'textarea').readOnly).toBe(true);
+      expect(query<HTMLInputElement>(element, '.field--title input').readOnly).toBe(true);
+      http()
+        .expectOne((candidate) => candidate.method === 'POST')
+        .flush({ outcome: 'merged', draftRemoved: true, path: 'docs/new-doc.md', created: true });
+      await settle();
+      expect(query<HTMLTextAreaElement>(element, 'textarea').readOnly).toBe(false);
+    });
+
     it('remembers the author name typed in the dialog', async () => {
       const element = await openReady();
       openDialog(element);

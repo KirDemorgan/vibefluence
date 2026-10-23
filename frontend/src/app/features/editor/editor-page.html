@@ -155,6 +155,7 @@
           autocomplete="off"
           [placeholder]="i18n.t('editor.titlePlaceholder')"
           [value]="titleModel()"
+          [readOnly]="publishing()"
           (input)="onTitle($event)"
         />
       </label>
@@ -281,6 +282,7 @@
           autocomplete="off"
           [attr.aria-label]="i18n.t('editor.content')"
           [value]="content()"
+          [readOnly]="publishing()"
           (input)="onSource($event)"
         ></textarea>
       </div>

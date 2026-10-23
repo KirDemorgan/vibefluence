@@ -435,6 +435,7 @@ export class EditorPage {
     this.publishing.set(true);
     this.conflict.set(null);
     this.problem.set(null);
+    const sentSignature = this.signature();
     this.persist()
       .pipe(
         switchMap((draft) =>
@@ -442,18 +443,18 @@ export class EditorPage {
         ),
       )
       .subscribe({
-        next: (result) => this.published(result),
+        next: (result) => this.published(result, sentSignature),
         error: (error: unknown) => this.publishFailed(error),
       });
   }
 
-  private published(result: PublishResult): void {
+  private published(result: PublishResult, sentSignature: string): void {
     this.publishing.set(false);
     this.confirming.set(false);
     this.result.set(result);
     if (result.draftRemoved) {
       this.draftId.set(null);
-      this.savedSignature.set(this.signature());
+      this.savedSignature.set(sentSignature);
     }
     this.drafts.reload();
     this.repos.reload();
