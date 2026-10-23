@@ -90,3 +90,14 @@ func TestMetricsRenderIsSortedAndStable(t *testing.T) {
 		last = index
 	}
 }
+
+func TestUnknownMethodsShareOneMetricSeries(t *testing.T) {
+	handler := NewHandler(Options{})
+	for _, method := range []string{"FOO1", "FOO2", "FOO3"} {
+		do(t, handler, method, "/healthz")
+	}
+	body := do(t, handler, http.MethodGet, "/metrics").Body.String()
+	if strings.Contains(body, "FOO") || !strings.Contains(body, `method="other"`) {
+		t.Errorf("methods are not bounded:\n%s", body)
+	}
+}

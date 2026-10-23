@@ -56,6 +56,7 @@ func NewHandler(opts Options) http.Handler {
 	}
 	var handler http.Handler = mux
 	handler = withWriteRateLimit(opts.WriteRatePerMinute, now, handler)
+	handler = http.NewCrossOriginProtection().Handler(handler)
 	handler = withSecurityHeaders(handler)
 	handler = withRecover(logger, handler)
 	handler = collected.middleware(handler)

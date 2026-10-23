@@ -545,3 +545,32 @@ func TestZeroValueRunnerUsesDefaults(t *testing.T) {
 		t.Fatal("Serve did not return")
 	}
 }
+
+func TestCrossSiteWritesAreRejectedWithoutABody(t *testing.T) {
+	api := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
+	handler := NewHandler(Options{API: api})
+
+	cross := httptest.NewRequest(http.MethodPost, "/api/v1/repos/x/drafts/1/publish", nil)
+	cross.Header.Set("Sec-Fetch-Site", "cross-site")
+	cross.Header.Set("Origin", "http://evil.example")
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, cross)
+	if recorder.Code != http.StatusForbidden {
+		t.Errorf("cross-site status = %d", recorder.Code)
+	}
+
+	same := httptest.NewRequest(http.MethodPost, "/api/v1/repos/x/drafts/1/publish", nil)
+	same.Header.Set("Sec-Fetch-Site", "same-origin")
+	recorder = httptest.NewRecorder()
+	handler.ServeHTTP(recorder, same)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("same-origin status = %d", recorder.Code)
+	}
+
+	plain := httptest.NewRequest(http.MethodPost, "/api/v1/repos/x/drafts/1/publish", nil)
+	recorder = httptest.NewRecorder()
+	handler.ServeHTTP(recorder, plain)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("non-browser status = %d", recorder.Code)
+	}
+}

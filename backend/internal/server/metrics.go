@@ -48,6 +48,15 @@ func routeClass(path string) string {
 	}
 }
 
+func methodLabel(method string) string {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut,
+		http.MethodPatch, http.MethodDelete, http.MethodOptions:
+		return method
+	}
+	return "other"
+}
+
 func (m *metrics) observe(key metricKey, elapsed time.Duration) {
 	seconds := elapsed.Seconds()
 	m.mu.Lock()
@@ -75,7 +84,7 @@ func (m *metrics) middleware(next http.Handler) http.Handler {
 		if status == 0 {
 			status = http.StatusOK
 		}
-		m.observe(metricKey{route: routeClass(r.URL.Path), method: r.Method, status: status}, time.Since(started))
+		m.observe(metricKey{route: routeClass(r.URL.Path), method: methodLabel(r.Method), status: status}, time.Since(started))
 	})
 }
 
